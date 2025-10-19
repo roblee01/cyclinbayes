@@ -18,3 +18,5 @@ Roxygen: list(markdown = TRUE)
 ByteCompile: true
 SystemRequirements: C++17
 RoxygenNote: 7.3.3
+URL: https://github.com/roblee01/cyclinbayes
+BugReports: https://github.com/roblee01/cyclinbayes/issues
