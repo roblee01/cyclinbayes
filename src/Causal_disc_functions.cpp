@@ -475,7 +475,8 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
       }
     }
 
-    Adjacency_matrix_list.row(i) = vectorise(Adjacency_matrix);
+    arma::rowvec vectorised_adj = arma::vectorise(Adjacency_matrix).t();
+    Adjacency_matrix_list.row(i-1) = vectorised_adj;
 
 
     //mu mat
@@ -497,7 +498,8 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
       mu_mat.row(i2) = mu_row_ordered;
     }
 
-    mu_matrix_list.row(i) = vectorise(mu_mat);
+    arma::rowvec vectorised_mu = arma::vectorise(mu_mat).t();
+    mu_matrix_list.row(i) = vectorised_mu;
 
 
 
@@ -548,7 +550,8 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
       }
     }
 
-    Causal_effect_matrix_list.row(i) = vectorise(Causal_effect_matrix);
+    arma::rowvec vectorised_causal = arma::vectorise(Causal_effect_matrix).t();
+    Causal_effect_matrix_list.row(i-1) = vectorised_causal;
 
     // Epsilon update
 
@@ -573,7 +576,8 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
       }
     }
 
-    tao_matrix_list.row(i) = vectorise(tao_mat);
+    arma::rowvec vectorised_tao = arma::vectorise(tao_mat).t();
+    tao_matrix_list.row(i) = vectorised_tao;
 
     // gamma 1 update
     double a_1 = a_gamma_1 + accu(Adjacency_matrix) / 2.0;
@@ -632,7 +636,8 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
       pi_mat.row(i6) = trans(rdirichlet_cpp(alpha_vec));
     }
 
-    pi_matrix_list.row(i) = vectorise(pi_mat);
+    arma::rowvec vectorised_pi = arma::vectorise(pi_mat).t();
+    pi_matrix_list.row(i) = vectorised_pi;
   }
 
 
@@ -854,8 +859,11 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
       }
     }
 
-    Adjacency_matrix_list.row(i) = vectorise(Adjacency_matrix);
-    Causal_effect_matrix_list.row(i) = vectorise(Causal_effect_matrix);
+    arma::rowvec vectorised_adj = arma::vectorise(Adjacency_matrix).t();
+    Adjacency_matrix_list.row(i-1) = vectorised_adj;
+
+    arma::rowvec vectorised_causal = arma::vectorise(Causal_effect_matrix).t();
+    Causal_effect_matrix_list.row(i-1) = vectorised_causal;
 
 
     //mu mat
@@ -877,7 +885,8 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
       mu_mat.row(i2) = mu_row_ordered;
     }
 
-    mu_matrix_list.row(i) = vectorise(mu_mat);
+    arma::rowvec vectorised_mu = arma::vectorise(mu_mat).t();
+    mu_matrix_list.row(i) = vectorised_mu;
 
     // Epsilon update
 
@@ -902,7 +911,10 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
       }
     }
 
-    tao_matrix_list.row(i) = vectorise(tao_mat);
+    arma::rowvec vectorised_tao = arma::vectorise(tao_mat).t();
+    tao_matrix_list.row(i) = vectorised_tao;
+
+
 
     // gamma 1 update
     double a_1 = a_gamma_1 + accu(Adjacency_matrix) / 2.0;
@@ -960,8 +972,8 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
       pi_mat.row(i6) = trans(rdirichlet_cpp(alpha_vec));
     }
 
-    pi_matrix_list.row(i) = vectorise(pi_mat);
-
+    arma::rowvec vectorised_pi = arma::vectorise(pi_mat).t();
+    pi_matrix_list.row(i) = vectorised_pi;
 
   }
 
