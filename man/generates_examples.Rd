@@ -4,7 +4,7 @@
 \alias{generates_examples}
 \title{Generating examples}
 \usage{
-generates_examples(num_covariates, prob_sparsity, is_dag)
+generates_examples(num_covariates, prob_sparsity, IS_DAG)
 }
 \arguments{
 \item{num_covariates}{number of features}

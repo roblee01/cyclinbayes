@@ -11,13 +11,13 @@
 #' @export
 
 
-generates_examples = function(num_covariates, prob_sparsity, is_dag){
+generates_examples = function(num_covariates, prob_sparsity, IS_DAG){
   Causal_effect_matrix_true=matrix(0,num_covariates,num_covariates)
   Causal_effect_matrix_true_str=matrix(0,num_covariates,num_covariates)
 
   probability_sparsity = c(prob_sparsity, 1-prob_sparsity)
 
-  if(is_dag){
+  if(IS_DAG){
     if (num_covariates<=20){
       repeat{
         probability_sparsity_tmp_1=probability_sparsity
@@ -43,7 +43,7 @@ generates_examples = function(num_covariates, prob_sparsity, is_dag){
         eigvalues_truth = eigen(Causal_effect_matrix_true_str)$values
         #end of i
         # if (det( identity_mat-Causal_effect_matrix_true) != 0) break
-        if (is.DAG(Causal_effect_matrix_true_str) && (det( identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
+        if (is_dag(Causal_effect_matrix_true_str) && (det( identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
           break
         }
       }#end of repeat
@@ -80,9 +80,6 @@ generates_examples = function(num_covariates, prob_sparsity, is_dag){
       data_matrix[i,] =  (solve(identity_mat-Causal_effect_matrix_true)%*%epsilon_true[i,])[,1]
     }
 
-
-
-
   } else{
     if (num_covariates<=20){
       repeat{
@@ -109,7 +106,7 @@ generates_examples = function(num_covariates, prob_sparsity, is_dag){
         eigvalues_truth = eigen(Causal_effect_matrix_true_str)$values
         #end of i
         # if (det( identity_mat-Causal_effect_matrix_true) != 0) break
-        if (!(is.DAG(Causal_effect_matrix_true_str)) && (det( identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
+        if (!(is_dag(Causal_effect_matrix_true_str)) && (det( identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
           break
         }
       }#end of repeat
