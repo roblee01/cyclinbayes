@@ -3,7 +3,9 @@
 #' @description
 #' Generates examples to test the two methods provided
 #'
-#' @param num_covariates number of features
+#' @param num_covariates sample size
+#' @param N number of features
+#' @param number of clusters for the generated mixed normal
 #' @param prob_sparsity Probability when we sample each non diagonal of the Adjacency matrix whether it is 0.
 #' @param is_dag Whether our true graph is a Directed Acyclic graph or Directed Cyclic graph
 #' @return A list containing the data matrix and the true Adjacency matrix
@@ -11,9 +13,13 @@
 #' @export
 
 
-generates_examples = function(num_covariates, prob_sparsity, IS_DAG){
+generates_examples = function(num_covariates, N, M_input, prob_sparsity, IS_DAG, seed_input){
+  set.seed(seed_input)
+
   Causal_effect_matrix_true=matrix(0,num_covariates,num_covariates)
   Causal_effect_matrix_true_str=matrix(0,num_covariates,num_covariates)
+  identity_mat=matrix(0,num_covariates,num_covariates)
+  diag(identity_mat)=1
 
   probability_sparsity = c(prob_sparsity, 1-prob_sparsity)
 
@@ -43,14 +49,14 @@ generates_examples = function(num_covariates, prob_sparsity, IS_DAG){
         eigvalues_truth = eigen(Causal_effect_matrix_true_str)$values
         #end of i
         # if (det( identity_mat-Causal_effect_matrix_true) != 0) break
-        if (is_dag(Causal_effect_matrix_true_str) && (det( identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
+        if (gRbase::is.DAG(Causal_effect_matrix_true_str) && (det(identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
           break
         }
       }#end of repeat
     }#end of if
 
 
-    M = 5
+    M = M_input
     M_1 = 2
 
     mu_epsilon <- c(-0.5,0.5)
@@ -106,7 +112,7 @@ generates_examples = function(num_covariates, prob_sparsity, IS_DAG){
         eigvalues_truth = eigen(Causal_effect_matrix_true_str)$values
         #end of i
         # if (det( identity_mat-Causal_effect_matrix_true) != 0) break
-        if (!(is_dag(Causal_effect_matrix_true_str)) && (det( identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
+        if (!(gRbase::is.DAG(Causal_effect_matrix_true_str)) && (det( identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
           break
         }
       }#end of repeat
@@ -119,7 +125,7 @@ generates_examples = function(num_covariates, prob_sparsity, IS_DAG){
       rho = 0.9
     }
 
-    M = 5
+    M = M_input
     M_1 = 2
 
     mu_epsilon <- c(-0.5,0.5)

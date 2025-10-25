@@ -4,12 +4,23 @@
 \alias{generates_examples}
 \title{Generating examples}
 \usage{
-generates_examples(num_covariates, prob_sparsity, IS_DAG)
+generates_examples(
+  num_covariates,
+  N,
+  M_input,
+  prob_sparsity,
+  IS_DAG,
+  seed_input
+)
 }
 \arguments{
-\item{num_covariates}{number of features}
+\item{num_covariates}{sample size}
+
+\item{N}{number of features}
 
 \item{prob_sparsity}{Probability when we sample each non diagonal of the Adjacency matrix whether it is 0.}
+
+\item{number}{of clusters for the generated mixed normal}
 
 \item{is_dag}{Whether our true graph is a Directed Acyclic graph or Directed Cyclic graph}
 }

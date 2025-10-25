@@ -3,3 +3,5 @@
 export(BCD)
 export(BayesSCLingam)
 export(generates_examples)
+importFrom(Rcpp,evalCpp)
+useDynLib(cyclinbayes, .registration = TRUE)

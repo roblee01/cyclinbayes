@@ -97,6 +97,7 @@ double log_dgamma(double x, double a, double b) {
 
 // DAG Function
 
+//
 bool is_dag(const arma::mat& adj){
   arma::uword n = adj.n_rows;
 
@@ -300,23 +301,18 @@ arma::vec Metropolis_hastings_portions_cpp(arma::mat data_matrix, arma::mat Adja
 
 
 
+
 // [[Rcpp::export]]
-List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double b_gamma, double a_tao, double b_tao, double a_og_tao, double b_og_tao, double a_gamma_1, double b_gamma_1, double alpha, double M, double num_iter){
+List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double b_gamma, double a_tao, double b_tao, double a_og_tao, double b_og_tao, double a_gamma_1, double b_gamma_1, double alpha, double M, double num_iter){
   double num_features = data_matrix.n_cols;
   double N = data_matrix.n_rows;
 
-
   arma::vec gamma_1_list = arma::zeros<arma::vec>(num_iter);
   arma::vec gamma_list = arma::zeros<arma::vec>(num_iter);
-  arma::mat Adjacency_matrix_list = arma::zeros<arma::mat>(num_iter, N*num_features);
-  arma::mat Causal_effect_matrix_list = arma::zeros<arma::mat>(num_iter, N*num_features);
+  arma::mat Adjacency_matrix_list = arma::zeros<arma::mat>(num_iter, num_features*num_features);
   arma::mat mu_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
   arma::mat tao_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
   arma::mat pi_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
-
-
-
-
 
   // initialization
   arma::mat Adjacency_matrix(static_cast<arma::uword>(num_features),static_cast<arma::uword>(num_features),arma::fill::zeros);
@@ -359,17 +355,6 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
 
 
 
-  double FN = 0;
-  double FP = 0;
-  double TP = 0;
-  double TN = 0;
-
-  arma::vec TPR_list = arma::zeros<arma::vec>(num_iter);
-  arma::vec FPR_list = arma::zeros<arma::vec>(num_iter);
-  arma::vec Accuracy_list = arma::zeros<arma::vec>(num_iter);
-  arma::vec Precision_list = arma::zeros<arma::vec>(num_iter);
-  arma::vec Recall_list = arma::zeros<arma::vec>(num_iter);
-  arma::vec F1score_list = arma::zeros<arma::vec>(num_iter);
 
   arma::uvec all_indices = arma::regspace<arma::uvec>(0, num_features - 1);
 
@@ -382,11 +367,12 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
     double total_entries = std::pow(Adjacency_matrix.n_rows,2);
 
     double a = a_gamma + accu(Adjacency_matrix);
-    double b = b_gamma + total_entries + accu(Adjacency_matrix) - Adjacency_matrix.n_rows;
+    double b = b_gamma + total_entries - accu(Adjacency_matrix) - Adjacency_matrix.n_rows;
 
     double gamma_result = rbeta_cpp(1,a,b)(0);
 
-    gamma_list(i) = gamma_result;
+    gamma_list(i-1) = gamma_result;
+    //Rcout << "gamma finished" <<std::endl;
 
     // Adjacency matrix update
     for(int i1 = 0; i1 < num_features; i1++){
@@ -476,8 +462,13 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
     }
 
     arma::rowvec vectorised_adj = arma::vectorise(Adjacency_matrix).t();
+
     Adjacency_matrix_list.row(i-1) = vectorised_adj;
 
+    //Rcout <<  vectorised_adj.n_elem <<std::endl;
+    //Rcout <<  Adjacency_matrix_list.n_cols <<std::endl;
+
+    //Rcout << "Adjacency matrix finished" <<std::endl;
 
     //mu mat
     for(int i2 = 0; i2 < num_features; i2++){
@@ -498,15 +489,11 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
       mu_mat.row(i2) = mu_row_ordered;
     }
 
-    arma::rowvec vectorised_mu = arma::vectorise(mu_mat).t();
-    mu_matrix_list.row(i) = vectorised_mu;
-
-
-
-
-
-    //Causal effect matrix
-
+    arma::rowvec vectorized_mu = arma::vectorise(mu_mat).t();
+    //Rcout << vectorized_mu.n_elem <<std::endl;
+    //Rcout << mu_matrix_list.n_cols <<std::endl;
+    mu_matrix_list.row(i-1) = vectorized_mu;
+    //Rcout << "mu matrix finished" <<std::endl;
 
     for(int i3 = 0; i3 < num_features; i3++){
       // Subset and normalize Z_matrix for covariate i
@@ -549,13 +536,13 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
         }
       }
     }
-
-    arma::rowvec vectorised_causal = arma::vectorise(Causal_effect_matrix).t();
-    Causal_effect_matrix_list.row(i-1) = vectorised_causal;
+    //Rcout << "Causal effect matrix finished" <<std::endl;
 
     // Epsilon update
 
     arma::mat epsilon_mat = ((arma::eye(static_cast<arma::uword>(num_features), static_cast<arma::uword>(num_features)) - Causal_effect_matrix) * data_matrix.t()).t();
+
+    //Rcout << "epsilon matrix finished" <<std::endl;
 
     // tao update
 
@@ -576,8 +563,15 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
       }
     }
 
-    arma::rowvec vectorised_tao = arma::vectorise(tao_mat).t();
-    tao_matrix_list.row(i) = vectorised_tao;
+    //Rcout << "tao matrix finished" <<std::endl;
+
+    arma::rowvec vectorized_tao = arma::vectorise(tao_mat).t();
+    //Rcout << vectorized_mu.n_elem <<std::endl;
+    //Rcout << mu_matrix_list.n_cols <<std::endl;
+    tao_matrix_list.row(i-1) = vectorized_tao;
+    //Rcout << "mu matrix finished" <<std::endl;
+
+
 
     // gamma 1 update
     double a_1 = a_gamma_1 + accu(Adjacency_matrix) / 2.0;
@@ -589,7 +583,7 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
 
     double gamma_1 = rinvgamma_cpp(1,a_1,b_1)(0);
 
-    gamma_1_list(i) = gamma_1;
+    gamma_1_list(i-1) = gamma_1;
 
 
     //Z matrix
@@ -624,8 +618,7 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
 
       }
     }
-
-    //pi mat
+    //Rcout << "Z_matrix finished" <<std::endl;
 
     for(int i6 = 0; i6 < num_features; i6++){
       arma::mat Z_portion = Z_matrix.rows(i6*static_cast<arma::uword>(N),(i6+1)*static_cast<arma::uword>(N)-1);
@@ -636,43 +629,31 @@ List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gam
       pi_mat.row(i6) = trans(rdirichlet_cpp(alpha_vec));
     }
 
-    arma::rowvec vectorised_pi = arma::vectorise(pi_mat).t();
-    pi_matrix_list.row(i) = vectorised_pi;
+    arma::rowvec vectorized_pi = arma::vectorise(pi_mat).t();
+    //Rcout << vectorized_mu.n_elem <<std::endl;
+    //Rcout << mu_matrix_list.n_cols <<std::endl;
+    pi_matrix_list.row(i-1) = vectorized_pi;
   }
-
-
-
 
   arma::rowvec Adjacency_matrix_means = arma::mean(Adjacency_matrix_list.rows(0.75*num_iter-1,num_iter-1),0);
 
-
-
   return List::create(
-    Named("Adjacency_matrix_means") = Adjacency_matrix_means,
-    Named("Adjacency_matrix_list") = Adjacency_matrix_list.rows(0.75*num_iter-1,num_iter-1),
-    Named("Causal_effect_matrix_list") = Causal_effect_matrix_list.rows(0.75*num_iter-1,num_iter-1),
-    Named("gamma_list") = gamma_list,
-    Named("gamma_1_list") = gamma_1_list
+    Named("Adjacency_matrix") = Adjacency_matrix,
+    Named("Adjacency_matrix_list") = Adjacency_matrix_list
   );
 }
 
-
 // [[Rcpp::export]]
-
-List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double b_gamma, double a_tao, double b_tao, double a_og_tao, double b_og_tao, double a_gamma_1, double b_gamma_1, double alpha, double M, double num_iter){
+List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double b_gamma, double a_tao, double b_tao, double a_gamma_1, double b_gamma_1, double alpha, double M, double num_iter){
   double num_features = data_matrix.n_cols;
   double N = data_matrix.n_rows;
 
   arma::vec gamma_1_list = arma::zeros<arma::vec>(num_iter);
   arma::vec gamma_list = arma::zeros<arma::vec>(num_iter);
-  arma::mat Adjacency_matrix_list = arma::zeros<arma::mat>(num_iter, N*num_features);
-  arma::mat Causal_effect_matrix_list = arma::zeros<arma::mat>(num_iter, N*num_features);
+  arma::mat Adjacency_matrix_list = arma::zeros<arma::mat>(num_iter, num_features*num_features);
   arma::mat mu_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
   arma::mat tao_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
   arma::mat pi_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
-
-
-
 
   // initialization
   arma::mat Adjacency_matrix(static_cast<arma::uword>(num_features),static_cast<arma::uword>(num_features),arma::fill::zeros);
@@ -714,41 +695,46 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
   arma::mat practice_prob_mat(N,M);
 
 
-
   arma::uvec all_indices = arma::regspace<arma::uvec>(0, num_features - 1);
 
-  double burn_in = 1000;
 
-  for(int i = 0; i < num_iter; i++){
+
+  for(int i = 1; i <= num_iter; i++){
 
     // gamma update
 
     double total_entries = std::pow(Adjacency_matrix.n_rows,2);
 
     double a = a_gamma + accu(Adjacency_matrix);
-    double b = b_gamma + total_entries + accu(Adjacency_matrix) - Adjacency_matrix.n_rows;
+    double b = b_gamma + total_entries - accu(Adjacency_matrix) - Adjacency_matrix.n_rows;
 
     double gamma_result = rbeta_cpp(1,a,b)(0);
 
-    gamma_list(i) = gamma_result;
+    gamma_list(i-1) = gamma_result;
+    //Rcout << "gamma finished" <<std::endl;
 
-    // Adjacency and Causal matrix update
+
 
 
     double proposal_mean_add = 0;
-    double proposal_sd_add = 0.1;
+
+    double burn_in = 1000;
+    double proposal_sd_add;
 
     if(i < burn_in){
-      double proposal_sd_add = 0.1;
+      proposal_sd_add = 0.15;
     } else{
-      double proposal_sd_add = std::sqrt(gamma_1);
+      proposal_sd_add = std::sqrt(gamma_1);
     }
-
-
-    double log_q_prop = 0;
-    double log_q_prev = 0;
     //arma::uvec all_indices = arma::regspace<arma::uvec>(0, num_features - 1);
+
+    double log_q_prop;
+    double log_q_prev;
+
+
     for(arma::uword i6 = 0; i6 < num_features; i6++){
+
+
       arma::uvec all_indices = arma::regspace<arma::uvec>(0, num_features - 1);
       //Rcout << "all_indices: " << all_indices << std::endl;
 
@@ -770,16 +756,16 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
 
           Causal_prop(i6,current_column) = proposal_coef;
 
-          double log_q_prop = fast_dnorm_log(Causal_effect_matrix(i6,current_column), proposal_mean_add, proposal_sd_add);
+          log_q_prop = fast_dnorm_log(Causal_effect_matrix(i6,current_column), proposal_mean_add, proposal_sd_add);
           //Rcout << "log_q_prop: " << log_q_prop << std::endl;
-          //double log_q_prev = 0;
+          log_q_prev = 0;
         } else{
           Adjacency_prop(i6,current_column) = 0;
           double proposal_coef = 0;
           Causal_prop(i6,current_column) = proposal_coef;
 
-          double log_q_prop = 0;
-          double log_q_prev = fast_dnorm_log(proposal_coef, proposal_mean_add, proposal_sd_add);
+          log_q_prop = 0;
+          log_q_prev = fast_dnorm_log(proposal_coef, proposal_mean_add, proposal_sd_add);
         }
 
         arma::cx_vec eigenvalues = arma::eig_gen(Causal_prop);
@@ -810,29 +796,30 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
       }
     }
 
-    // random walk
 
-    double weight_prop_sd = 0.1;
 
-    for(int i11 = 0; i11 < num_features; i11++){
+    double burn_in_sd = 15000;
+    arma::vec v = {static_cast<double>(i), burn_in_sd};
+    double weight_prop_sd = 0.03 + 0.07 * (arma::min(v) / burn_in_sd);
 
-      arma::rowvec current_row = Adjacency_matrix.row(i11);
+
+    for(arma::uword i6 = 0; i6 < num_features; i6++){
+
+      arma::rowvec current_row = Adjacency_matrix.row(i6);
       arma::uvec present_rows = arma::find(current_row != 0);
 
       if(present_rows.n_elem != 0){
-        for(int j11 = 0; j11 < present_rows.n_elem; j11++){
+        for(arma::uword j6 = 0; j6 < present_rows.n_elem; j6++){
           arma::mat Causal_prop = Causal_effect_matrix;
-          arma::mat Adjacency_prop = Adjacency_matrix;
 
-
-          Causal_prop(i11,present_rows(j11)) = Causal_effect_matrix(i11,present_rows(j11)) + weight_prop_sd*arma::randn();
+          Causal_prop(i6,present_rows(j6)) = Causal_effect_matrix(i6,present_rows(j6)) + weight_prop_sd*arma::randn();
 
           arma::cx_vec eigenvalues = arma::eig_gen(Causal_prop);
           //Rcout << "Vector contents: " << eigenvalues << std::endl;
           arma::vec mod_eigenvalues = arma::abs(eigenvalues);
 
           if(arma::max(mod_eigenvalues) < 1){
-            arma::vec log_prop_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_prop, Causal_prop, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
+            arma::vec log_prop_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_prop, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
             arma::vec log_current_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_effect_matrix, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
 
 
@@ -852,7 +839,7 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
             double sampled_val = arma::randu();
 
             if(sampled_val < bool_vec.min()){
-              Causal_effect_matrix(i11,present_rows(j11)) = Causal_prop(i11,present_rows(j11));
+              Causal_effect_matrix(i6,present_rows(j6)) = Causal_prop(i6,present_rows(j6));
             }
           }
         }
@@ -860,13 +847,19 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
     }
 
     arma::rowvec vectorised_adj = arma::vectorise(Adjacency_matrix).t();
+
     Adjacency_matrix_list.row(i-1) = vectorised_adj;
 
-    arma::rowvec vectorised_causal = arma::vectorise(Causal_effect_matrix).t();
-    Causal_effect_matrix_list.row(i-1) = vectorised_causal;
+    //Rcout <<  vectorised_adj.n_elem <<std::endl;
+    //Rcout <<  Adjacency_matrix_list.n_cols <<std::endl;
 
+    //Rcout << "Adjacency matrix finished" <<std::endl;
 
+    // Epsilon update
+
+    arma::mat epsilon_mat = ((arma::eye(static_cast<arma::uword>(num_features), static_cast<arma::uword>(num_features)) - Causal_effect_matrix) * data_matrix.t()).t();
     //mu mat
+
     for(int i2 = 0; i2 < num_features; i2++){
       arma::mat first_part = Z_matrix.rows(i2*static_cast<arma::uword>(N),(i2+1)*static_cast<arma::uword>(N)-1);
       first_part.each_row() /= tao_mat.row(i2);
@@ -881,16 +874,18 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
       arma::vec sd_vec = arma::sqrt(1.0/denominator_result);
 
       arma::rowvec mu_row = mean_vec.t() + arma::randn<arma::rowvec>(static_cast<arma::uword>(M)) % sd_vec.t();
-      arma::rowvec mu_row_ordered = arma::sort(mu_row,"ascend");
-      mu_mat.row(i2) = mu_row_ordered;
+      //arma::rowvec mu_row_ordered = arma::sort(mu_row,"ascend");
+      mu_mat.row(i2) = mu_row;
     }
 
-    arma::rowvec vectorised_mu = arma::vectorise(mu_mat).t();
-    mu_matrix_list.row(i) = vectorised_mu;
+    arma::rowvec vectorized_mu = arma::vectorise(mu_mat).t();
+    //Rcout << vectorized_mu.n_elem <<std::endl;
+    //Rcout << mu_matrix_list.n_cols <<std::endl;
+    mu_matrix_list.row(i-1) = vectorized_mu;
+    //Rcout << "mu matrix finished" <<std::endl;
 
-    // Epsilon update
 
-    arma::mat epsilon_mat = ((arma::eye(static_cast<arma::uword>(num_features), static_cast<arma::uword>(num_features)) - Causal_effect_matrix) * data_matrix.t()).t();
+    //Rcout << "Causal effect matrix finished" <<std::endl;
 
     // tao update
 
@@ -911,8 +906,13 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
       }
     }
 
-    arma::rowvec vectorised_tao = arma::vectorise(tao_mat).t();
-    tao_matrix_list.row(i) = vectorised_tao;
+    //Rcout << "tao matrix finished" <<std::endl;
+
+    arma::rowvec vectorized_tao = arma::vectorise(tao_mat).t();
+    //Rcout << vectorized_mu.n_elem <<std::endl;
+    //Rcout << mu_matrix_list.n_cols <<std::endl;
+    tao_matrix_list.row(i-1) = vectorized_tao;
+    //Rcout << "mu matrix finished" <<std::endl;
 
 
 
@@ -926,7 +926,8 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
 
     double gamma_1 = rinvgamma_cpp(1,a_1,b_1)(0);
 
-    gamma_1_list(i) = gamma_1;
+    gamma_1_list(i-1) = gamma_1;
+
 
     //Z matrix
     for(int i5 = 0; i5 < num_features; i5++){
@@ -960,8 +961,7 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
 
       }
     }
-
-    //pi mat
+    //Rcout << "Z_matrix finished" <<std::endl;
 
     for(int i6 = 0; i6 < num_features; i6++){
       arma::mat Z_portion = Z_matrix.rows(i6*static_cast<arma::uword>(N),(i6+1)*static_cast<arma::uword>(N)-1);
@@ -972,20 +972,18 @@ List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double
       pi_mat.row(i6) = trans(rdirichlet_cpp(alpha_vec));
     }
 
-    arma::rowvec vectorised_pi = arma::vectorise(pi_mat).t();
-    pi_matrix_list.row(i) = vectorised_pi;
+    arma::rowvec vectorized_pi = arma::vectorise(pi_mat).t();
+    //Rcout << vectorized_mu.n_elem <<std::endl;
+    //Rcout << mu_matrix_list.n_cols <<std::endl;
+    pi_matrix_list.row(i-1) = vectorized_pi;
 
   }
 
   arma::rowvec Adjacency_matrix_means = arma::mean(Adjacency_matrix_list.rows(0.75*num_iter-1,num_iter-1),0);
 
-
-
   return List::create(
-    Named("Adjacency_matrix_means") = Adjacency_matrix_means,
-    Named("Causal_effect_matrix_list") = Causal_effect_matrix_list,
-    Named("gamma_list") = gamma_list,
-    Named("gamma_1_list") = gamma_1_list
+    Named("Adjacency_matrix") = Adjacency_matrix,
+    Named("Adjacency_matrix_list") = Adjacency_matrix_list
   );
 }
 
