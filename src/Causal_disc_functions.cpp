@@ -310,6 +310,7 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a
   arma::vec gamma_1_list = arma::zeros<arma::vec>(num_iter);
   arma::vec gamma_list = arma::zeros<arma::vec>(num_iter);
   arma::mat Adjacency_matrix_list = arma::zeros<arma::mat>(num_iter, num_features*num_features);
+  arma::mat Causal_effect_matrix_list = arma::zeros<arma::mat>(num_iter, num_features*num_features);
   arma::mat mu_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
   arma::mat tao_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
   arma::mat pi_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
@@ -369,7 +370,7 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a
     double a = a_gamma + accu(Adjacency_matrix);
     double b = b_gamma + total_entries - accu(Adjacency_matrix) - Adjacency_matrix.n_rows;
 
-    double gamma_result = rbeta_cpp(1,a,b)(0);
+    gamma_result = rbeta_cpp(1,a,b)(0);
 
     gamma_list(i-1) = gamma_result;
     //Rcout << "gamma finished" <<std::endl;
@@ -537,6 +538,10 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a
       }
     }
     //Rcout << "Causal effect matrix finished" <<std::endl;
+    arma::rowvec vectorized_causal = arma::vectorise(Causal_effect_matrix).t();
+    Causal_effect_matrix_list.row(i-1) = vectorized_causal;
+
+
 
     // Epsilon update
 
@@ -581,7 +586,7 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a
 
     double b_1 = b_gamma_1 + accu(weighted_effects)/2;
 
-    double gamma_1 = rinvgamma_cpp(1,a_1,b_1)(0);
+    gamma_1 = rinvgamma_cpp(1,a_1,b_1)(0);
 
     gamma_1_list(i-1) = gamma_1;
 
@@ -639,7 +644,13 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a
 
   return List::create(
     Named("Adjacency_matrix") = Adjacency_matrix,
-    Named("Adjacency_matrix_list") = Adjacency_matrix_list
+    Named("Adjacency_matrix_list") = Adjacency_matrix_list,
+    Named("Causal_effect_matrix_list") = Causal_effect_matrix_list,
+    Named("gamma_list") = gamma_list,
+    Named("gamma_1_list") = gamma_1_list,
+    Named("mu_matrix_list") =  mu_matrix_list,
+    Named("tao_matrix_list") = tao_matrix_list,
+    Named("pi_matrix_list") = pi_matrix_list
   );
 }
 
@@ -651,6 +662,7 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
   arma::vec gamma_1_list = arma::zeros<arma::vec>(num_iter);
   arma::vec gamma_list = arma::zeros<arma::vec>(num_iter);
   arma::mat Adjacency_matrix_list = arma::zeros<arma::mat>(num_iter, num_features*num_features);
+  arma::mat Causal_effect_matrix_list = arma::zeros<arma::mat>(num_iter, num_features*num_features);
   arma::mat mu_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
   arma::mat tao_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
   arma::mat pi_matrix_list = arma::zeros<arma::mat>(num_iter, M*num_features);
@@ -693,6 +705,7 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
   arma::vec numerator_portion_1 = arma::zeros<arma::vec>(N);
   arma::vec denominator_portion_1 = arma::zeros<arma::vec>(N);
   arma::mat practice_prob_mat(N,M);
+
 
 
   arma::uvec all_indices = arma::regspace<arma::uvec>(0, num_features - 1);
@@ -847,8 +860,10 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
     }
 
     arma::rowvec vectorised_adj = arma::vectorise(Adjacency_matrix).t();
-
     Adjacency_matrix_list.row(i-1) = vectorised_adj;
+
+    arma::rowvec causal_adj = arma::vectorise(Causal_effect_matrix).t();
+    Causal_effect_matrix_list.row(i-1) = causal_adj;
 
     //Rcout <<  vectorised_adj.n_elem <<std::endl;
     //Rcout <<  Adjacency_matrix_list.n_cols <<std::endl;
@@ -976,14 +991,19 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
     //Rcout << vectorized_mu.n_elem <<std::endl;
     //Rcout << mu_matrix_list.n_cols <<std::endl;
     pi_matrix_list.row(i-1) = vectorized_pi;
-
   }
 
   arma::rowvec Adjacency_matrix_means = arma::mean(Adjacency_matrix_list.rows(0.75*num_iter-1,num_iter-1),0);
 
   return List::create(
     Named("Adjacency_matrix") = Adjacency_matrix,
-    Named("Adjacency_matrix_list") = Adjacency_matrix_list
+    Named("Adjacency_matrix_list") = Adjacency_matrix_list,
+    Named("Causal_effect_matrix_list") = Causal_effect_matrix_list,
+    Named("gamma_list") = gamma_list,
+    Named("gamma_1_list") = gamma_1_list,
+    Named("mu_matrix_list") =  mu_matrix_list,
+    Named("tao_matrix_list") = tao_matrix_list,
+    Named("pi_matrix_list") = pi_matrix_list
   );
 }
 

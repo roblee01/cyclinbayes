@@ -35,9 +35,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// BayesSCLingam
-List BayesSCLingam(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double b_gamma, double a_tao, double b_tao, double a_og_tao, double b_og_tao, double a_gamma_1, double b_gamma_1, double alpha, double M, double num_iter);
-RcppExport SEXP _cyclinbayes_BayesSCLingam(SEXP data_matrixSEXP, SEXP a_muSEXP, SEXP b_muSEXP, SEXP a_gammaSEXP, SEXP b_gammaSEXP, SEXP a_taoSEXP, SEXP b_taoSEXP, SEXP a_og_taoSEXP, SEXP b_og_taoSEXP, SEXP a_gamma_1SEXP, SEXP b_gamma_1SEXP, SEXP alphaSEXP, SEXP MSEXP, SEXP num_iterSEXP) {
+// BayesSCLingam_cpp
+List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double b_gamma, double a_tao, double b_tao, double a_og_tao, double b_og_tao, double a_gamma_1, double b_gamma_1, double alpha, double M, double num_iter);
+RcppExport SEXP _cyclinbayes_BayesSCLingam_cpp(SEXP data_matrixSEXP, SEXP a_muSEXP, SEXP b_muSEXP, SEXP a_gammaSEXP, SEXP b_gammaSEXP, SEXP a_taoSEXP, SEXP b_taoSEXP, SEXP a_og_taoSEXP, SEXP b_og_taoSEXP, SEXP a_gamma_1SEXP, SEXP b_gamma_1SEXP, SEXP alphaSEXP, SEXP MSEXP, SEXP num_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -55,13 +55,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type M(MSEXP);
     Rcpp::traits::input_parameter< double >::type num_iter(num_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(BayesSCLingam(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_og_tao, b_og_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter));
+    rcpp_result_gen = Rcpp::wrap(BayesSCLingam_cpp(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_og_tao, b_og_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter));
     return rcpp_result_gen;
 END_RCPP
 }
-// BCD
-List BCD(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double b_gamma, double a_tao, double b_tao, double a_og_tao, double b_og_tao, double a_gamma_1, double b_gamma_1, double alpha, double M, double num_iter);
-RcppExport SEXP _cyclinbayes_BCD(SEXP data_matrixSEXP, SEXP a_muSEXP, SEXP b_muSEXP, SEXP a_gammaSEXP, SEXP b_gammaSEXP, SEXP a_taoSEXP, SEXP b_taoSEXP, SEXP a_og_taoSEXP, SEXP b_og_taoSEXP, SEXP a_gamma_1SEXP, SEXP b_gamma_1SEXP, SEXP alphaSEXP, SEXP MSEXP, SEXP num_iterSEXP) {
+// BCD_cpp
+List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, double b_gamma, double a_tao, double b_tao, double a_gamma_1, double b_gamma_1, double alpha, double M, double num_iter);
+RcppExport SEXP _cyclinbayes_BCD_cpp(SEXP data_matrixSEXP, SEXP a_muSEXP, SEXP b_muSEXP, SEXP a_gammaSEXP, SEXP b_gammaSEXP, SEXP a_taoSEXP, SEXP b_taoSEXP, SEXP a_gamma_1SEXP, SEXP b_gamma_1SEXP, SEXP alphaSEXP, SEXP MSEXP, SEXP num_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -72,14 +72,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type b_gamma(b_gammaSEXP);
     Rcpp::traits::input_parameter< double >::type a_tao(a_taoSEXP);
     Rcpp::traits::input_parameter< double >::type b_tao(b_taoSEXP);
-    Rcpp::traits::input_parameter< double >::type a_og_tao(a_og_taoSEXP);
-    Rcpp::traits::input_parameter< double >::type b_og_tao(b_og_taoSEXP);
     Rcpp::traits::input_parameter< double >::type a_gamma_1(a_gamma_1SEXP);
     Rcpp::traits::input_parameter< double >::type b_gamma_1(b_gamma_1SEXP);
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type M(MSEXP);
     Rcpp::traits::input_parameter< double >::type num_iter(num_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(BCD(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_og_tao, b_og_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter));
+    rcpp_result_gen = Rcpp::wrap(BCD_cpp(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -137,8 +135,8 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_cyclinbayes_logSumExp", (DL_FUNC) &_cyclinbayes_logSumExp, 1},
     {"_cyclinbayes_log_dgamma", (DL_FUNC) &_cyclinbayes_log_dgamma, 3},
-    {"_cyclinbayes_BayesSCLingam", (DL_FUNC) &_cyclinbayes_BayesSCLingam, 14},
-    {"_cyclinbayes_BCD", (DL_FUNC) &_cyclinbayes_BCD, 14},
+    {"_cyclinbayes_BayesSCLingam_cpp", (DL_FUNC) &_cyclinbayes_BayesSCLingam_cpp, 14},
+    {"_cyclinbayes_BCD_cpp", (DL_FUNC) &_cyclinbayes_BCD_cpp, 12},
     {"_cyclinbayes_posterior_mean_adjacency", (DL_FUNC) &_cyclinbayes_posterior_mean_adjacency, 2},
     {"_cyclinbayes_posterior_mean_adjacency_threshold", (DL_FUNC) &_cyclinbayes_posterior_mean_adjacency_threshold, 3},
     {"_cyclinbayes_percentile_ci_causal_mat", (DL_FUNC) &_cyclinbayes_percentile_ci_causal_mat, 3},
