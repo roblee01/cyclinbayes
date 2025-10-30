@@ -41,96 +41,158 @@ You can install the development version of cyclinbayes from [GitHub](https://git
 This is an example how the first acyclic Bayesian lingam method works. Let p denote the number of features in the matrix and n be the sample size of the data. We generate simulation error terms $\epsilon_{i}^{(q)}$ from the distribution for $i=1\ldots,p$ and $q=1\ldots,n$: a finite mixture model $\sum_{k=1}^{M}\pi_{ik}N(\mu_{ik},\tau_{ik})$, where $M = 2$, $(\mu_{i1},\mu_{i2})=(-0.5,0.5)$, and $(\tau_{i1},\tau_{i2})=(0.1,0.3)$, and $(\pi_{i1},\pi_{i2})=(0.5,0.5)$. Then to create the true causal effect matrix, for each entry in the matrix, we sample either 0 or 1 based on sparsity probability $\Delta=0.9$ until the matrix $B$ represents the adjacency matrix of a DAG. we use the generated causal effect matrix and perform the operation, $\epsilon_{i}^{(q)}$ from $\vec{Y}_{i} = (I-B)^{-1}\vec{\epsilon}_{i}$ , where $\vec{\epsilon}_{i} = (\epsilon_{i}^{(1)},\ldots,\epsilon_{i}^{(n)})^{T}$ and $\vec{Y}_{i}=(Y_{i}^{(1)},\ldots,Y_{i}^{(n)})^{T}$.
 
 ```{r example}
-#library(cyclinbayes) 
+#library(cyclinbayes)
 set.seed(21)
 N = 300 # Sample size for the test data
 num_covariates = 10 # number of features for test data
-M = 2 # Number of finite clusters for mixed normal in likelihood 
+M = 2 # Number of finite clusters for mixed normal in likelihood
 num_iter = 10000 # Number of iterations MCMC runs
 
 
 ####################################### hyperparameter setup ###################################################
-  
-params = list(a_mu = 0, b_mu = 2, a_gamma = 0.5, b_gamma = 0.5, a_gamma_1 = 2, b_gamma_1 = 1, a_tao = 2, b_tao = 1, a_og_tao=0.01, b_og_tao=0.01, alpha = 1)
+
+params = list(
+  a_mu = 0,
+  b_mu = 2,
+  a_gamma = 0.5,
+  b_gamma = 0.5,
+  a_gamma_1 = 2,
+  b_gamma_1 = 1,
+  a_tao = 2,
+  b_tao = 1,
+  a_og_tao = 0.01,
+  b_og_tao = 0.01,
+  alpha = 1
+)
 
 ############################# generating DAG examples ##########################################################
-example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21) 
+example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
 
-data_matrix = example_list$data_matrix 
-Adjacency_matrix_true = example_list$Adjacency_matrix_true 
+data_matrix = example_list$data_matrix
+Adjacency_matrix_true = example_list$Adjacency_matrix_true
 
 #######################################################################################
 
-results_lists = BayesSCLingam(data_matrix, params$a_mu, params$b_mu, params$a_gamma, params$b_gamma, params$a_tao, params$b_tao, params$a_og_tao, params$b_og_tao, params$a_gamma_1, params$b_gamma_1, params$alpha, M, num_iter) # Runs the Acyclic algorithm
-  
+results_lists = BayesSCLingam(
+  data_matrix,
+  params$a_mu,
+  params$b_mu,
+  params$a_gamma,
+  params$b_gamma,
+  params$a_tao,
+  params$b_tao,
+  params$a_og_tao,
+  params$b_og_tao,
+  params$a_gamma_1,
+  params$b_gamma_1,
+  params$alpha,
+  M,
+  num_iter
+) # Runs the Acyclic algorithm
+
 Adjacency_matrix_means = results_lists$Adjacency_matrix_means # Posterior means for each of the possible edges of the graph
 Adjacency_matrix_list = results_lists$Adjacency_matrix_list # Matrix where each row is a flattened version of the Adjacency matrix for that iteration
 
-TPR_list = rep(0,num_iter)
-FPR_list = rep(0,num_iter)
-Recall_list = rep(0,num_iter)
-Accuracy_list = rep(0,num_iter)
-Precision_list = rep(0,num_iter)
-F1score_list = rep(0,num_iter)
+TPR_list = rep(0, num_iter)
+FPR_list = rep(0, num_iter)
+Recall_list = rep(0, num_iter)
+Accuracy_list = rep(0, num_iter)
+Precision_list = rep(0, num_iter)
+F1score_list = rep(0, num_iter)
 
 # Captures the TPR, FPR, Recall, Accuracy, Precision, and F1score for each estimated graph structure per iteration
 
-for(i in 1:num_iter){
-  Adjacency_matrix = matrix(Adjacency_matrix_list[i,], num_covariates, num_covariates)
-    
-  FN=0
-  FP=0
-  TP=0
-  TN=0
-  for (i_value in 1:num_covariates){
-    for(j_value in 1:num_covariates){
-        
-        if((Adjacency_matrix[i_value,j_value]==1) && (Adjacency_matrix_true[i_value,j_value]==1)){TP=TP+1}
-        if((Adjacency_matrix[i_value,j_value]==0) && (Adjacency_matrix_true[i_value,j_value]==1)){FN=FN+1}
-        
-        if((Adjacency_matrix[i_value,j_value]==0) && (Adjacency_matrix_true[i_value,j_value]==0)){TN=TN+1}
-        if((Adjacency_matrix[i_value,j_value]==1) && (Adjacency_matrix_true[i_value,j_value]==0)){FP=FP+1}
+for (i in 1:num_iter) {
+  Adjacency_matrix = matrix(Adjacency_matrix_list[i, ], num_covariates, num_covariates)
+  
+  FN = 0
+  FP = 0
+  TP = 0
+  TN = 0
+  for (i_value in 1:num_covariates) {
+    for (j_value in 1:num_covariates) {
+      if ((Adjacency_matrix[i_value, j_value] == 1) &&
+          (Adjacency_matrix_true[i_value, j_value] == 1)) {
+        TP = TP + 1
+      }
+      if ((Adjacency_matrix[i_value, j_value] == 0) &&
+          (Adjacency_matrix_true[i_value, j_value] == 1)) {
+        FN = FN + 1
+      }
+      if ((Adjacency_matrix[i_value, j_value] == 0) &&
+          (Adjacency_matrix_true[i_value, j_value] == 0)) {
+        TN = TN + 1
+      }
+      if ((Adjacency_matrix[i_value, j_value] == 1) &&
+          (Adjacency_matrix_true[i_value, j_value] == 0)) {
+        FP = FP + 1
+      }
     }
   }#end of i_value
-    
-  TPR_list[i]=TP/(TP+FN)
-  FPR_list[i]=FP/(TN+FP)
-  Accuracy_list[i]=(TP+TN)/(TP+FP+TN+FN)
-  Precision_list[i]=TP/(TP+FP)
-  Recall_list[i]=TP/(TP+FN)
-  F1score_list[i]=2*(Precision_list[i]*Recall_list[i])/(Precision_list[i]+Recall_list[i])
-}
   
-TPR_result = mean(TPR_list[(0.75*num_iter):num_iter])
-FPR_result = mean(FPR_list[(0.75*num_iter):num_iter])
-Accuracy_result =mean(Accuracy_list[(0.75*num_iter):num_iter])
-Precision_result=mean(Precision_list[(0.75*num_iter):num_iter])
-Recall_result=mean(Recall_list[(0.75*num_iter):num_iter])
-F1score_result=mean(F1score_list[(0.75*num_iter):num_iter],na.rm=TRUE)
+  TPR_list[i] = TP / (TP + FN)
+  FPR_list[i] = FP / (TN + FP)
+  Accuracy_list[i] = (TP + TN) / (TP + FP + TN + FN)
+  Precision_list[i] = TP / (TP + FP)
+  Recall_list[i] = TP / (TP + FN)
+  F1score_list[i] = 2 * (Precision_list[i] * Recall_list[i]) / (Precision_list[i] +
+                                                                  Recall_list[i])
+}
+
+TPR_result = mean(TPR_list[(0.75 * num_iter):num_iter])
+FPR_result = mean(FPR_list[(0.75 * num_iter):num_iter])
+Accuracy_result = mean(Accuracy_list[(0.75 * num_iter):num_iter])
+Precision_result = mean(Precision_list[(0.75 * num_iter):num_iter])
+Recall_result = mean(Recall_list[(0.75 * num_iter):num_iter])
+F1score_result = mean(F1score_list[(0.75 * num_iter):num_iter], na.rm =
+                        TRUE)
 ```
 
 This is an example of how the cyclic Bayesian sampler works. We generate the Adjacency matrix first making sure we get a cyclic graph. Then in order to guarantee the inverse of $I-B$,  we constrain the spectral radius of causal effect matrix B. For now we set the current adjacency matrix as B. We then calculate $\rho(B)$, the largest modulus of the eigenvalue of B. If $|\rho(B)|\geq 0.95$, we rescale the causal effect matrix to be $(0.95/\rho(B))B$, to guarantee the spectral radius is less than 0.95.
 
 ```{r}
-library(cyclinbayes) 
+library(cyclinbayes)
 N = 250 # Sample size for the test data
 num_covariates = 7 # Number of features for test data
-M = 2 # Number of finite clusters for mixed normal in likelihood 
+M = 2 # Number of finite clusters for mixed normal in likelihood
 num_iter = 10000 # Number of iterations MCMC runs
 
 ####################################### hyperparameter setup ###################################################
 
-params = list(a_mu = 0, b_mu = 2, a_gamma = 2, b_gamma = 1, a_gamma_1 = 2, b_gamma_1 = 1, a_tao = 2, b_tao = 1, alpha = 1)
-  
+params = list(
+  a_mu = 0,
+  b_mu = 2,
+  a_gamma = 2,
+  b_gamma = 1,
+  a_gamma_1 = 2,
+  b_gamma_1 = 1,
+  a_tao = 2,
+  b_tao = 1,
+  alpha = 1
+)
+
 ############################# generating examples #############################
-  
-example_list = generates_examples_DCG(num_covariates,N, M, 0.9, 21)
+
+example_list = generates_examples_DCG(num_covariates, N, M, 0.9, 21)
 
 data_matrix = example_list$data_matrix
 Adjacency_matrix_true = example_list$Adjacency_matrix_true
 ###############################################################################
-  
-results_list = BayesCD(data_matrix, params$a_mu, params$b_mu, params$a_gamma, params$b_gamma, params$a_tao, params$b_tao, params$a_gamma_1, params$b_gamma_1, params$alpha, M, num_iter)
+
+results_list = BayesCD(
+  data_matrix,
+  params$a_mu,
+  params$b_mu,
+  params$a_gamma,
+  params$b_gamma,
+  params$a_tao,
+  params$b_tao,
+  params$a_gamma_1,
+  params$b_gamma_1,
+  params$alpha,
+  M,
+  num_iter
+)
 
 Adjacency_matrix_means = results_list$Adjacency_matrix_means # Posterior means for each of the possible edges of the graph
 Adjacency_matrix_list = results_list$Adjacency_matrix_list # Matrix where each row is a flattened version of the Adjacency matrix for that iteration
@@ -143,39 +205,52 @@ Precision_list = rep(0, num_iter)
 F1score_list = rep(0, num_iter)
 
 # Captures the TPR, FPR, Recall, Accuracy, Precision, and F1score for each estimated graph structure per iteration
+
+for (i in 1:num_iter) {
+  Adjacency_matrix = matrix(Adjacency_matrix_list[i, ], num_covariates, num_covariates)
   
-for(i in 1:num_iter){
-  Adjacency_matrix = matrix(Adjacency_matrix_list[i,], num_covariates, num_covariates)
-    
-  FN=0
-  FP=0
-  TP=0
-  TN=0
-  for (i_value in 1:num_covariates){
-    for(j_value in 1:num_covariates){
-        
-        if((Adjacency_matrix[i_value,j_value]==1) && (Adjacency_matrix_true[i_value,j_value]==1)){TP=TP+1}
-        if((Adjacency_matrix[i_value,j_value]==0) && (Adjacency_matrix_true[i_value,j_value]==1)){FN=FN+1}
-        
-        if((Adjacency_matrix[i_value,j_value]==0) && (Adjacency_matrix_true[i_value,j_value]==0)){TN=TN+1}
-        if((Adjacency_matrix[i_value,j_value]==1) && (Adjacency_matrix_true[i_value,j_value]==0)){FP=FP+1}
+  FN = 0
+  FP = 0
+  TP = 0
+  TN = 0
+  for (i_value in 1:num_covariates) {
+    for (j_value in 1:num_covariates) {
+      if ((Adjacency_matrix[i_value, j_value] == 1) &&
+          (Adjacency_matrix_true[i_value, j_value] == 1)) {
+        TP = TP + 1
+      }
+      if ((Adjacency_matrix[i_value, j_value] == 0) &&
+          (Adjacency_matrix_true[i_value, j_value] == 1)) {
+        FN = FN + 1
+      }
+      
+      if ((Adjacency_matrix[i_value, j_value] == 0) &&
+          (Adjacency_matrix_true[i_value, j_value] == 0)) {
+        TN = TN + 1
+      }
+      if ((Adjacency_matrix[i_value, j_value] == 1) &&
+          (Adjacency_matrix_true[i_value, j_value] == 0)) {
+        FP = FP + 1
+      }
     }
   }#end of i_value
-    
-  TPR_list[i]=TP/(TP+FN)
-  FPR_list[i]=FP/(TN+FP)
-  Accuracy_list[i]=(TP+TN)/(TP+FP+TN+FN)
-  Precision_list[i]=TP/(TP+FP)
-  Recall_list[i]=TP/(TP+FN)
-  F1score_list[i]=2*(Precision_list[i]*Recall_list[i])/(Precision_list[i]+Recall_list[i])
-}
   
-TPR_result = mean(TPR_list[(0.75*num_iter):num_iter])
-FPR_result = mean(FPR_list[(0.75*num_iter):num_iter])
-Accuracy_result =mean(Accuracy_list[(0.75*num_iter):num_iter])
-Precision_result=mean(Precision_list[(0.75*num_iter):num_iter])
-Recall_result=mean(Recall_list[(0.75*num_iter):num_iter])
-F1score_result=mean(F1score_list[(0.75*num_iter):num_iter],na.rm=TRUE)
+  TPR_list[i] = TP / (TP + FN)
+  FPR_list[i] = FP / (TN + FP)
+  Accuracy_list[i] = (TP + TN) / (TP + FP + TN + FN)
+  Precision_list[i] = TP / (TP + FP)
+  Recall_list[i] = TP / (TP + FN)
+  F1score_list[i] = 2 * (Precision_list[i] * Recall_list[i]) / (Precision_list[i] +
+                                                                  Recall_list[i])
+}
+
+TPR_result = mean(TPR_list[(0.75 * num_iter):num_iter])
+FPR_result = mean(FPR_list[(0.75 * num_iter):num_iter])
+Accuracy_result = mean(Accuracy_list[(0.75 * num_iter):num_iter])
+Precision_result = mean(Precision_list[(0.75 * num_iter):num_iter])
+Recall_result = mean(Recall_list[(0.75 * num_iter):num_iter])
+F1score_result = mean(F1score_list[(0.75 * num_iter):num_iter], na.rm =
+                        TRUE)
 ```
 
 
