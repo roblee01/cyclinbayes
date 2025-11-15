@@ -29,6 +29,13 @@ First, you will need to install the devtools package. From R, we type
 #remotes::install_github("roblee01/cyclinbayes")
 library(cyclinbayes)
 library(ggplot2)
+library(SID)
+library(pcalg)
+#> 
+#> Attaching package: 'pcalg'
+#> The following object is masked from 'package:SID':
+#> 
+#>     randomDAG
 ```
 
 We load
@@ -81,7 +88,7 @@ params = list(
   a_og_tao = 0.01,
   b_og_tao = 0.01,
   alpha = 1
-)
+) 
 
 ############################# generating DAG examples ##########################################################
 example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
@@ -108,108 +115,152 @@ results_lists = BayesSCLingam(
   num_iter
 ) # Runs the Acyclic algorithm
 
-Adjacency_matrix_means = results_lists$Adjacency_matrix_means # Posterior means for each of the possible edges of the graph
-Adjacency_matrix_list = results_lists$Adjacency_matrix_list # Matrix where each row is a flattened version of the Adjacency matrix for that iteration
 
-TPR_list = rep(0, num_iter)
-FPR_list = rep(0, num_iter)
-Recall_list = rep(0, num_iter)
-Accuracy_list = rep(0, num_iter)
-Precision_list = rep(0, num_iter)
-F1score_list = rep(0, num_iter)
-
-# Captures the TPR, FPR, Recall, Accuracy, Precision, and F1score for each estimated graph structure per iteration
-
-for (i in 1:num_iter) {
-  Adjacency_matrix = matrix(Adjacency_matrix_list[i, ], num_covariates, num_covariates)
-  
-  FN = 0
-  FP = 0
-  TP = 0
-  TN = 0
-  for (i_value in 1:num_covariates) {
-    for (j_value in 1:num_covariates) {
-      if ((Adjacency_matrix[i_value, j_value] == 1) &&
-          (Adjacency_matrix_true[i_value, j_value] == 1)) {
-        TP = TP + 1
-      }
-      if ((Adjacency_matrix[i_value, j_value] == 0) &&
-          (Adjacency_matrix_true[i_value, j_value] == 1)) {
-        FN = FN + 1
-      }
-      if ((Adjacency_matrix[i_value, j_value] == 0) &&
-          (Adjacency_matrix_true[i_value, j_value] == 0)) {
-        TN = TN + 1
-      }
-      if ((Adjacency_matrix[i_value, j_value] == 1) &&
-          (Adjacency_matrix_true[i_value, j_value] == 0)) {
-        FP = FP + 1
-      }
-    }
-  }#end of i_value
-  
-  TPR_list[i] = TP / (TP + FN)
-  FPR_list[i] = FP / (TN + FP)
-  Accuracy_list[i] = (TP + TN) / (TP + FP + TN + FN)
-  Precision_list[i] = TP / (TP + FP)
-  Recall_list[i] = TP / (TP + FN)
-  F1score_list[i] = 2 * (Precision_list[i] * Recall_list[i]) / (Precision_list[i] +
-                                                                  Recall_list[i])
-}
-
-TPR_result = mean(TPR_list[(0.75 * num_iter):num_iter])
-FPR_result = mean(FPR_list[(0.75 * num_iter):num_iter])
-Accuracy_result = mean(Accuracy_list[(0.75 * num_iter):num_iter])
-Precision_result = mean(Precision_list[(0.75 * num_iter):num_iter])
-Recall_result = mean(Recall_list[(0.75 * num_iter):num_iter])
-F1score_result = mean(F1score_list[(0.75 * num_iter):num_iter], na.rm =
-                        TRUE)
+Adjacency_matrix_means = results_lists$Adjacency_matrix_means 
+Adjacency_matrix_list = results_lists$Adjacency_matrix_list 
+Causal_effect_matrix_list = results_lists$Causal_effect_matrix_list
+gamma_list = results_lists$gamma_list
+gamma_1_list = results_lists$gamma_1_list
+mu_matrix_list = results_lists$mu_matrix_list
+tao_matrix_list = results_lists$tao_matrix_list
+pi_matrix_list = results_lists$pi_matrix_list
 ```
 
-Then using the posterior samples, we can quantify uncertainty directly
-from them. For every parameter, we have a full distribution, where we
-can compute posterior means, standard deviations, and from that credible
-intervals. Then for the edges we can compute posterior inclusion
-probabilities. Below we have an example of analyzing the posterior
-inclusion probabilities for each of the possible edges in the graph.
+To achieve the most accurate graph structure estimate, we apply
+summary_posterior_vec, which selects the best-fitting graph based on
+SHD, SID, and the Frobenius norm. SID is only applicable here because we
+are sampling DAGs. Our primary estimate is based on SHD, followed by SID
+and then the Frobenius norm.
 
-<div style="display: flex; gap: 20px; align-items: flex-start;">
+``` r
+Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'shd')
+Adjacency_matrix
+#>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+#>  [1,]    0    0    1    0    0    0    0    0    0     0
+#>  [2,]    0    0    0    0    0    0    0    0    0     1
+#>  [3,]    0    0    0    0    0    0    0    0    0     0
+#>  [4,]    0    0    0    0    0    0    0    0    0     0
+#>  [5,]    1    1    0    0    0    0    0    0    0     0
+#>  [6,]    0    0    0    0    0    0    0    0    0     0
+#>  [7,]    0    0    0    1    0    0    0    0    0     1
+#>  [8,]    0    0    0    0    0    1    0    0    0     0
+#>  [9,]    0    0    0    0    0    1    0    0    0     0
+#> [10,]    0    0    0    0    0    0    0    1    0     0
+```
 
-<div>
+``` r
+Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'sid')
+Adjacency_matrix
+#>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+#>  [1,]    0    0    1    0    0    0    0    0    0     0
+#>  [2,]    0    0    0    0    0    0    0    0    0     1
+#>  [3,]    0    0    0    0    0    0    0    0    0     0
+#>  [4,]    0    0    0    0    0    0    0    0    0     0
+#>  [5,]    1    1    0    0    0    0    0    0    0     0
+#>  [6,]    0    0    0    0    0    0    0    0    0     0
+#>  [7,]    0    0    0    1    0    0    0    0    0     1
+#>  [8,]    0    0    0    0    0    1    0    0    0     0
+#>  [9,]    0    0    0    0    0    1    0    0    0     0
+#> [10,]    0    0    0    0    0    0    0    1    0     0
+```
 
-|     |     |     |     |     |     |     |     |     |     |
-|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|
-|   0 |   0 |   1 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
-|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   1 |
-|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
-|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
-|   1 |   1 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
-|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
-|   0 |   0 |   0 |   1 |   0 |   0 |   0 |   0 |   0 |   1 |
-|   0 |   0 |   0 |   0 |   0 |   1 |   0 |   0 |   0 |   0 |
-|   0 |   0 |   0 |   0 |   0 |   1 |   0 |   0 |   0 |   0 |
-|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   1 |   0 |   0 |
+``` r
+Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'forb')
+Adjacency_matrix
+#>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+#>  [1,]    0    0    1    0    0    0    0    0    0     0
+#>  [2,]    0    0    0    0    0    0    0    0    0     1
+#>  [3,]    0    0    0    0    0    0    0    0    0     0
+#>  [4,]    0    0    0    0    0    0    0    0    0     0
+#>  [5,]    1    1    0    0    0    0    0    0    0     0
+#>  [6,]    0    0    0    0    0    0    0    0    0     0
+#>  [7,]    0    0    0    1    0    0    0    0    0     1
+#>  [8,]    0    0    0    0    0    1    0    0    0     0
+#>  [9,]    0    0    0    0    0    1    0    0    0     0
+#> [10,]    0    0    0    0    0    0    0    1    0     0
+```
 
-</div>
+All of this is same as our true Adjacency matrix.
 
-<div>
+``` r
+Adjacency_matrix_true
+#>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+#>  [1,]    0    0    1    0    0    0    0    0    0     0
+#>  [2,]    0    0    0    0    0    0    0    0    0     1
+#>  [3,]    0    0    0    0    0    0    0    0    0     0
+#>  [4,]    0    0    0    0    0    0    0    0    0     0
+#>  [5,]    1    1    0    0    0    0    0    0    0     0
+#>  [6,]    0    0    0    0    0    0    0    0    0     0
+#>  [7,]    0    0    0    1    0    0    0    0    0     1
+#>  [8,]    0    0    0    0    0    1    0    0    0     0
+#>  [9,]    0    0    0    0    0    1    0    0    0     0
+#> [10,]    0    0    0    0    0    0    0    1    0     0
+```
 
-|  |  |  |  |  |  |  |  |  |  |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.0000000 | 0.0031987 | 1.0000000 | 0.0015994 | 0.0000000 | 0.0027989 | 0.0007997 | 0.0027989 | 0.0023990 | 0.0011995 |
-| 0.0023990 | 0.0000000 | 0.0047981 | 0.0051979 | 0.0000000 | 0.0051979 | 0.0047981 | 0.0111955 | 0.0047981 | 1.0000000 |
-| 0.0000000 | 0.0007997 | 0.0000000 | 0.0015994 | 0.0000000 | 0.0087965 | 0.0003998 | 0.0115954 | 0.0051979 | 0.0023990 |
-| 0.0000000 | 0.0000000 | 0.0000000 | 0.0000000 | 0.0019992 | 0.0019992 | 0.0000000 | 0.0023990 | 0.0011995 | 0.0011995 |
-| 1.0000000 | 1.0000000 | 0.0071971 | 0.0031987 | 0.0000000 | 0.0035986 | 0.0011995 | 0.0023990 | 0.0051979 | 0.0055978 |
-| 0.0047981 | 0.0000000 | 0.0000000 | 0.0027989 | 0.0000000 | 0.0000000 | 0.0000000 | 0.0000000 | 0.0000000 | 0.0000000 |
-| 0.0099960 | 0.0135946 | 0.0203918 | 1.0000000 | 0.0027989 | 0.0839664 | 0.0000000 | 0.0155938 | 0.0195922 | 1.0000000 |
-| 0.0000000 | 0.0000000 | 0.0003998 | 0.0083966 | 0.0000000 | 1.0000000 | 0.0000000 | 0.0000000 | 0.0047981 | 0.0000000 |
-| 0.0007997 | 0.0000000 | 0.0000000 | 0.0027989 | 0.0000000 | 1.0000000 | 0.0000000 | 0.0003998 | 0.0000000 | 0.0003998 |
-| 0.0031987 | 0.0000000 | 0.0007997 | 0.0011995 | 0.0000000 | 0.0147941 | 0.0000000 | 1.0000000 | 0.0011995 | 0.0000000 |
+We can plot individual parameters, such as the probability of there
+being an edge $\gamma$.
 
-</div>
+``` r
+plot(gamma_list[,1][(0.75*num_iter):num_iter],type='l',ylab='gamma value')
+```
 
-</div>
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" /> Then
+see the analysis of this parameter, through our function
+summary_posterior_vec. We can get both the 95% credible interval and our
+highest posterior density.
+
+``` r
+gamma_posterior_summary = summary_posterior_vec(gamma_list,0.95)
+gamma_posterior_summary$credible_interval
+#>       2.5%      97.5% 
+#> 0.05189561 0.17901237
+gamma_posterior_summary$hpd_interval[,1]
+#>      lower      upper 
+#> 0.04550084 0.16964687
+```
+
+Below we show the HPD and credible intervals for the estimated causal
+effect coefficients, where the red line denotes the true causal weights.
+The credible intervals for the nonzero coefficients closely capture the
+true values, and the HPD estimates align near the reference line,
+indicating that the method accurately identifies both causal strength
+and graph structure.
+
+``` r
+Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list,level = 0.95)
+hpd_matrix_acyclic = Causal_effect_matrix_summary$hpd_matrix
+ci_matrix_acyclic = Causal_effect_matrix_summary$ci_matrix
+
+par(mfrow=c(2,1))
+num_non_zero_coef = ncol(hpd_matrix_acyclic[,which(colSums(hpd_matrix_acyclic)!=0)])
+data_1 = data.frame(cbind(1:num_non_zero_coef,t(hpd_matrix_acyclic[,which(colSums(hpd_matrix_acyclic)!=0)])))
+
+
+ggplot(data_1) +
+  geom_segment(aes(x = lower, xend = upper, y = V1, yend = V1)) +
+  geom_vline(xintercept = 1, linetype = "dashed") +
+  labs(y = NULL, x = "HPD interval") +
+  theme_minimal()
+```
+
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+
+``` r
+
+
+data_2 = data.frame(ci_matrix_acyclic[which(rowSums(ci_matrix_acyclic)!=0),])
+x = 1:nrow(data_2)
+data_2 = cbind(x,data_2)
+
+ggplot(data_2, aes(x = x, y = X2)) +
+  geom_point(size = 3) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  geom_errorbar(aes(ymin = X1, ymax = X3), width = 0.2) +  # just X1/X3
+  labs(y = "Weight Estimate with 95% CI", x = "X") +
+  theme_minimal()
+```
+
+<img src="man/figures/README-unnamed-chunk-9-2.png" width="100%" />
 
 This is an example of how the cyclic Bayesian sampler works. We generate
 the Adjacency matrix first making sure we get a cyclic graph. Then in
@@ -247,6 +298,7 @@ example_list = generates_examples_DCG(num_covariates, N, M, 0.9, 21)
 
 data_matrix = example_list$data_matrix
 Adjacency_matrix_true = example_list$Adjacency_matrix_true
+Causal_effect_matrix_true = example_list$Causal_effect_matrix_true
 
 ###############################################################################
 
@@ -265,73 +317,120 @@ results_list = BayesCD(
   num_iter
 )
 
-Adjacency_matrix_means = results_list$Adjacency_matrix_means # Posterior means for each of the possible edges of the graph
-Adjacency_matrix_list = results_list$Adjacency_matrix_list # Matrix where each row is a flattened version of the Adjacency matrix for that iteration
+Adjacency_matrix_means = results_list$Adjacency_matrix_means 
+Adjacency_matrix_list = results_list$Adjacency_matrix_list 
+Causal_effect_matrix_list = results_list$Causal_effect_matrix_list
+gamma_list = results_list$gamma_list
+gamma_1_list = results_list$gamma_1_list
+mu_matrix_list = results_list$mu_matrix_list
+tao_matrix_list = results_list$tao_matrix_list
+pi_matrix_list = results_list$pi_matrix_list
+```
 
-TPR_list = rep(0, num_iter)
-FPR_list = rep(0, num_iter)
-Recall_list = rep(0, num_iter)
-Accuracy_list = rep(0, num_iter)
-Precision_list = rep(0, num_iter)
-F1score_list = rep(0, num_iter)
+To obtain the most accurate estimate of the graph structure, we use
+summary_posterior_vec, which identifies the best-fitting graph based on
+the Structural Hamming Distance (SHD) and the Frobenius norm. The
+Structural Intervention Distance (SID) is not applicable here since the
+sampled graphs are not restricted to DAGs. The example below illustrates
+this procedure.
 
-# Captures the TPR, FPR, Recall, Accuracy, Precision, and F1score for each estimated graph structure per iteration
-
-for (i in 1:num_iter) {
-  Adjacency_matrix = matrix(Adjacency_matrix_list[i, ], num_covariates, num_covariates)
-  
-  FN = 0
-  FP = 0
-  TP = 0
-  TN = 0
-  for (i_value in 1:num_covariates) {
-    for (j_value in 1:num_covariates) {
-      if ((Adjacency_matrix[i_value, j_value] == 1) &&
-          (Adjacency_matrix_true[i_value, j_value] == 1)) {
-        TP = TP + 1
-      }
-      if ((Adjacency_matrix[i_value, j_value] == 0) &&
-          (Adjacency_matrix_true[i_value, j_value] == 1)) {
-        FN = FN + 1
-      }
-      
-      if ((Adjacency_matrix[i_value, j_value] == 0) &&
-          (Adjacency_matrix_true[i_value, j_value] == 0)) {
-        TN = TN + 1
-      }
-      if ((Adjacency_matrix[i_value, j_value] == 1) &&
-          (Adjacency_matrix_true[i_value, j_value] == 0)) {
-        FP = FP + 1
-      }
-    }
-  }#end of i_value
-  
-  TPR_list[i] = TP / (TP + FN)
-  FPR_list[i] = FP / (TN + FP)
-  Accuracy_list[i] = (TP + TN) / (TP + FP + TN + FN)
-  Precision_list[i] = TP / (TP + FP)
-  Recall_list[i] = TP / (TP + FN)
-  F1score_list[i] = 2 * (Precision_list[i] * Recall_list[i]) / (Precision_list[i] +
-                                                                  Recall_list[i])
-}
-
-TPR_result = mean(TPR_list[(0.75 * num_iter):num_iter])
-FPR_result = mean(FPR_list[(0.75 * num_iter):num_iter])
-Accuracy_result = mean(Accuracy_list[(0.75 * num_iter):num_iter])
-Precision_result = mean(Precision_list[(0.75 * num_iter):num_iter])
-Recall_result = mean(Recall_list[(0.75 * num_iter):num_iter])
-F1score_result = mean(F1score_list[(0.75 * num_iter):num_iter], na.rm =
-                        TRUE)
+``` r
+posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'sid')
+#> [1] "Graph structure needs to be DAG"
 ```
 
 ``` r
-#par(mfrow=c(2,2))
-#plot(results_lists$gamma_list[(0.75*num_iter):num_iter], type='l', ylab='gamma 1 list')
-#plot(results_lists$gamma_1_list[(0.75*num_iter):num_iter], type='l', ylab='gamma list')
-#plot(results_lists$pi_matrix_list[(0.75*num_iter):num_iter,1], type='l',ylab='pi list')
-#plot(results_lists$mu_matrix_list[(0.75*num_iter):num_iter,1], type='l',ylab='tao list')
-
-#plot(results_lists$mu_matrix_list[,13],type='l')
-#plot(sqrt(results_lists$tao_matrix_list[(0.75*num_iter):num_iter,9]),type='l')
-#plot(results_lists$pi_matrix_list[,1],type='l')
+posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'shd')
+#>      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
+#> [1,]    0    0    0    0    0    0    0
+#> [2,]    0    0    0    0    0    0    1
+#> [3,]    0    1    0    0    0    1    0
+#> [4,]    0    0    0    0    0    0    0
+#> [5,]    1    0    1    0    0    0    0
+#> [6,]    0    0    0    0    1    0    0
+#> [7,]    0    0    1    1    0    0    0
 ```
+
+``` r
+posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'forb')
+#>      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
+#> [1,]    0    0    0    0    0    0    0
+#> [2,]    0    0    0    0    0    0    1
+#> [3,]    0    1    0    0    0    1    0
+#> [4,]    0    0    0    0    0    0    0
+#> [5,]    1    0    1    0    0    0    0
+#> [6,]    0    0    0    0    1    0    0
+#> [7,]    0    0    1    1    0    0    0
+```
+
+All of this is same as our true Adjacency matrix.
+
+``` r
+Adjacency_matrix_true
+#>      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
+#> [1,]    0    0    0    0    0    0    0
+#> [2,]    0    0    0    0    0    0    1
+#> [3,]    0    1    0    0    0    1    0
+#> [4,]    0    0    0    0    0    0    0
+#> [5,]    1    0    1    0    0    0    0
+#> [6,]    0    0    0    0    1    0    0
+#> [7,]    0    0    1    1    0    0    0
+```
+
+We again plot individual parameters, such as the probability of there
+being an edge $\gamma$.
+
+``` r
+plot(gamma_list[,1][(0.75*num_iter):num_iter],type='l',ylab='gamma value')
+```
+
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+Then see the analysis of this parameter, through our function
+summary_posterior_vec. We can get both the 95% credible interval and our
+highest posterior density.
+
+``` r
+gamma_posterior_summary = summary_posterior_vec(gamma_list,0.95)
+gamma_posterior_summary$credible_interval
+#>      2.5%     97.5% 
+#> 0.1153429 0.6389309
+gamma_posterior_summary$hpd_interval[,1]
+#>      lower      upper 
+#> 0.08967298 0.57338765
+```
+
+``` r
+Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list,level = 0.95)
+hpd_matrix_acyclic = Causal_effect_matrix_summary$hpd_matrix
+ci_matrix_acyclic = Causal_effect_matrix_summary$ci_matrix
+
+par(mfrow=c(2,1))
+num_non_zero_coef = ncol(hpd_matrix_acyclic[,which(colSums(hpd_matrix_acyclic)!=0)])
+data_1 = data.frame(cbind(1:num_non_zero_coef,t(hpd_matrix_acyclic[,which(colSums(hpd_matrix_acyclic)!=0)])))
+
+
+ggplot(data_1) +
+  geom_segment(aes(x = lower, xend = upper, y = V1, yend = V1)) +
+  geom_vline(xintercept = 0.7143305, linetype = "dashed") +
+  labs(y = NULL, x = "HPD interval") +
+  theme_minimal()
+```
+
+<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
+
+``` r
+
+
+data_2 = data.frame(ci_matrix_acyclic[which(rowSums(ci_matrix_acyclic)!=0),])
+x = 1:nrow(data_2)
+data_2 = cbind(x,data_2)
+
+ggplot(data_2, aes(x = x, y = X2)) +
+  geom_point(size = 3) +
+  geom_hline(yintercept = 0.7143305, linetype = "dashed", color = "red") +
+  geom_errorbar(aes(ymin = X1, ymax = X3), width = 0.2) +  # just X1/X3
+  labs(y = "Weight Estimate with 95% CI", x = "X") +
+  theme_minimal()
+```
+
+<img src="man/figures/README-unnamed-chunk-17-2.png" width="100%" />
