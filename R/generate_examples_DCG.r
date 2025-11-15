@@ -126,5 +126,5 @@ generates_examples_DCG = function(num_covariates, N, M_input, prob_sparsity, see
   }
 
 
-  return(list(data_matrix = data_matrix, Adjacency_matrix_true = Adjacency_matrix_true))
+  return(list(data_matrix = data_matrix, Adjacency_matrix_true = Adjacency_matrix_true, Causal_effect_matrix_true = Causal_effect_matrix_true))
 }

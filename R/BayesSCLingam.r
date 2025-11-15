@@ -21,6 +21,69 @@
 #' @return A list (from the C backend) typically containing adjacency and causal-effect matrices and, optionally, samples/diagnostics.
 #'
 #' @export
+#'
+#' @examples
+#' # Run BayesSCLingam based on simulated example
+#'
+#' # Data Generation
+#' set.seed(21)
+#'
+#'
+#' N = 300 # Sample size of data
+#' num_covariates = 10 # Number of features for test data
+#' M = 2 # Number of finite clusters for mixed normal in likelihood
+#' num_iter = 10000 # Number of iterations MCMC runs
+#'
+#' # function to generate DAG example
+#' example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
+#'
+#' data_matrix = example_list$data_matrix # generated data
+#' Adjacency_matrix_true = example_list$Adjacency_matrix_true # true graph structure
+#'
+#'
+#' # Input parameters for the BayesSCLingam function
+#'
+#' params = list(
+#' a_mu = 0,
+#' b_mu = 2,
+#' a_gamma = 0.5,
+#' b_gamma = 0.5,
+#' a_gamma_1 = 2,
+#' b_gamma_1 = 1,
+#' a_tao = 2,
+#' b_tao = 1,
+#' a_og_tao = 0.01,
+#' b_og_tao = 0.01,
+#' alpha = 1
+#' )
+#'
+#'
+#' results_lists = BayesSCLingam(
+#' data_matrix,
+#' params$a_mu,
+#' params$b_mu,
+#' params$a_gamma,
+#' params$b_gamma,
+#' params$a_tao,
+#' params$b_tao,
+#' params$a_og_tao,
+#' params$b_og_tao,
+#' params$a_gamma_1,
+#' params$b_gamma_1,
+#' params$alpha,
+#' M,
+#' num_iter
+#' ) # Runs the Acyclic algorithm
+#'
+#'
+#' Adjacency_matrix_means = results_lists$Adjacency_matrix_means
+#' Adjacency_matrix_list = results_lists$Adjacency_matrix_list
+#' Causal_effect_matrix_list = results_lists$Causal_effect_matrix_list
+#' gamma_list = results_lists$gamma_list
+#' gamma_1_list = results_lists$gamma_1_list
+#' mu_matrix_list = results_lists$mu_matrix_list
+#' tao_matrix_list = results_lists$tao_matrix_list
+#' pi_matrix_list = results_lists$pi_matrix_list
 
 BayesSCLingam <- function(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_og_tao, b_og_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter) {
   return(BayesSCLingam_cpp(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_og_tao, b_og_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter))

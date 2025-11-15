@@ -28,6 +28,7 @@ First, you will need to install the devtools package. From R, we type
 #install.packages("remotes")
 #remotes::install_github("roblee01/cyclinbayes")
 library(cyclinbayes)
+library(ggplot2)
 ```
 
 We load
@@ -165,6 +166,51 @@ F1score_result = mean(F1score_list[(0.75 * num_iter):num_iter], na.rm =
                         TRUE)
 ```
 
+Then using the posterior samples, we can quantify uncertainty directly
+from them. For every parameter, we have a full distribution, where we
+can compute posterior means, standard deviations, and from that credible
+intervals. Then for the edges we can compute posterior inclusion
+probabilities. Below we have an example of analyzing the posterior
+inclusion probabilities for each of the possible edges in the graph.
+
+<div style="display: flex; gap: 20px; align-items: flex-start;">
+
+<div>
+
+|     |     |     |     |     |     |     |     |     |     |
+|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|
+|   0 |   0 |   1 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
+|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   1 |
+|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
+|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
+|   1 |   1 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
+|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |
+|   0 |   0 |   0 |   1 |   0 |   0 |   0 |   0 |   0 |   1 |
+|   0 |   0 |   0 |   0 |   0 |   1 |   0 |   0 |   0 |   0 |
+|   0 |   0 |   0 |   0 |   0 |   1 |   0 |   0 |   0 |   0 |
+|   0 |   0 |   0 |   0 |   0 |   0 |   0 |   1 |   0 |   0 |
+
+</div>
+
+<div>
+
+|  |  |  |  |  |  |  |  |  |  |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.0000000 | 0.0031987 | 1.0000000 | 0.0015994 | 0.0000000 | 0.0027989 | 0.0007997 | 0.0027989 | 0.0023990 | 0.0011995 |
+| 0.0023990 | 0.0000000 | 0.0047981 | 0.0051979 | 0.0000000 | 0.0051979 | 0.0047981 | 0.0111955 | 0.0047981 | 1.0000000 |
+| 0.0000000 | 0.0007997 | 0.0000000 | 0.0015994 | 0.0000000 | 0.0087965 | 0.0003998 | 0.0115954 | 0.0051979 | 0.0023990 |
+| 0.0000000 | 0.0000000 | 0.0000000 | 0.0000000 | 0.0019992 | 0.0019992 | 0.0000000 | 0.0023990 | 0.0011995 | 0.0011995 |
+| 1.0000000 | 1.0000000 | 0.0071971 | 0.0031987 | 0.0000000 | 0.0035986 | 0.0011995 | 0.0023990 | 0.0051979 | 0.0055978 |
+| 0.0047981 | 0.0000000 | 0.0000000 | 0.0027989 | 0.0000000 | 0.0000000 | 0.0000000 | 0.0000000 | 0.0000000 | 0.0000000 |
+| 0.0099960 | 0.0135946 | 0.0203918 | 1.0000000 | 0.0027989 | 0.0839664 | 0.0000000 | 0.0155938 | 0.0195922 | 1.0000000 |
+| 0.0000000 | 0.0000000 | 0.0003998 | 0.0083966 | 0.0000000 | 1.0000000 | 0.0000000 | 0.0000000 | 0.0047981 | 0.0000000 |
+| 0.0007997 | 0.0000000 | 0.0000000 | 0.0027989 | 0.0000000 | 1.0000000 | 0.0000000 | 0.0003998 | 0.0000000 | 0.0003998 |
+| 0.0031987 | 0.0000000 | 0.0007997 | 0.0011995 | 0.0000000 | 0.0147941 | 0.0000000 | 1.0000000 | 0.0011995 | 0.0000000 |
+
+</div>
+
+</div>
+
 This is an example of how the cyclic Bayesian sampler works. We generate
 the Adjacency matrix first making sure we get a cyclic graph. Then in
 order to guarantee the inverse of $I-B$, we constrain the spectral
@@ -201,6 +247,7 @@ example_list = generates_examples_DCG(num_covariates, N, M, 0.9, 21)
 
 data_matrix = example_list$data_matrix
 Adjacency_matrix_true = example_list$Adjacency_matrix_true
+
 ###############################################################################
 
 results_list = BayesCD(
@@ -275,4 +322,16 @@ Precision_result = mean(Precision_list[(0.75 * num_iter):num_iter])
 Recall_result = mean(Recall_list[(0.75 * num_iter):num_iter])
 F1score_result = mean(F1score_list[(0.75 * num_iter):num_iter], na.rm =
                         TRUE)
+```
+
+``` r
+#par(mfrow=c(2,2))
+#plot(results_lists$gamma_list[(0.75*num_iter):num_iter], type='l', ylab='gamma 1 list')
+#plot(results_lists$gamma_1_list[(0.75*num_iter):num_iter], type='l', ylab='gamma list')
+#plot(results_lists$pi_matrix_list[(0.75*num_iter):num_iter,1], type='l',ylab='pi list')
+#plot(results_lists$mu_matrix_list[(0.75*num_iter):num_iter,1], type='l',ylab='tao list')
+
+#plot(results_lists$mu_matrix_list[,13],type='l')
+#plot(sqrt(results_lists$tao_matrix_list[(0.75*num_iter):num_iter,9]),type='l')
+#plot(results_lists$pi_matrix_list[,1],type='l')
 ```

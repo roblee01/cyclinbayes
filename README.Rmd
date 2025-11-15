@@ -26,6 +26,7 @@ First, you will need to install the devtools package. From R, we type
 #install.packages("remotes")
 #remotes::install_github("roblee01/cyclinbayes")
 library(cyclinbayes)
+library(ggplot2)
 ```
 
 We load 
@@ -148,6 +149,46 @@ F1score_result = mean(F1score_list[(0.75 * num_iter):num_iter], na.rm =
                         TRUE)
 ```
 
+Then using the posterior samples, we can quantify uncertainty directly from them. For every parameter, we have a full distribution, where we can compute posterior means, standard deviations, and from that credible intervals. Then for the edges we can compute posterior inclusion probabilities. Below we have an example of analyzing the posterior inclusion probabilities for each of the possible edges in the graph.
+
+<div style="display: flex; gap: 20px; align-items: flex-start;"> <div>
+```{r,echo=FALSE}
+knitr::kable(Adjacency_matrix_true|>kable_styling(font_size = 10))
+```
+</div> <div>
+```{r,echo=FALSE}
+Adjacency_matrix_means = matrix(colMeans(Adjacency_matrix_list[(0.75 * num_iter):num_iter,]),num_covariates,num_covariates)
+knitr::kable(Adjacency_matrix_means|>kable_styling(font_size = 10))
+```
+</div> </div>
+
+Each of the entries in the matrix on the right provides the probability that the edge is present in the graph. Below we plot the credible intervals for each of the present causal effect coefficients, where the red line represents the true causal weights. As seen with the provided credible intervals for the non zero causal weights, each credible interval is close to the true red line. Therefore, this indicates the method can both accurately determine causal weights and structure. 
+
+```{r}
+num_causal = length(which(c(Adjacency_matrix_true)==1))
+Causal_effect_matrix_non_zero = results_list$Causal_effect_matrix_list[(0.75*num_iter):num_iter,which(c(Adjacency_matrix_true)==1)]
+x = 1:num_causal
+#column_means = colMeans(Causal_effect_matrix_non_zero)
+
+#plot(x,column_means)
+
+
+confint_matrix = matrix(0,num_causal,2)
+
+
+for(i in 1:num_causal){
+  confint_matrix[i,] = quantile(Causal_effect_matrix_non_zero[,i],c(0.025,0.975))
+}
+data = cbind(x,column_means)
+
+ggplot(data,aes(x = x, y = column_means))+
+  geom_point(size = 3) +  # points
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red")+
+  geom_errorbar(aes(ymin = confint_matrix[,1], ymax = confint_matrix[,2]), width = 0.2) +  # error bars
+  labs(y = "Weight Estimate with 95% CI", x = "X") +
+  theme_minimal()
+```
+
 This is an example of how the cyclic Bayesian sampler works. We generate the Adjacency matrix first making sure we get a cyclic graph. Then in order to guarantee the inverse of $I-B$,  we constrain the spectral radius of causal effect matrix B. For now we set the current adjacency matrix as B. We then calculate $\rho(B)$, the largest modulus of the eigenvalue of B. If $|\rho(B)|\geq 0.95$, we rescale the causal effect matrix to be $(0.95/\rho(B))B$, to guarantee the spectral radius is less than 0.95.
 
 ```{r}
@@ -177,6 +218,7 @@ example_list = generates_examples_DCG(num_covariates, N, M, 0.9, 21)
 
 data_matrix = example_list$data_matrix
 Adjacency_matrix_true = example_list$Adjacency_matrix_true
+
 ###############################################################################
 
 results_list = BayesCD(
@@ -252,5 +294,111 @@ Recall_result = mean(Recall_list[(0.75 * num_iter):num_iter])
 F1score_result = mean(F1score_list[(0.75 * num_iter):num_iter], na.rm =
                         TRUE)
 ```
+<div style="display: flex; gap: 20px; align-items: flex-start;"> <div>
+```{r,echo=FALSE}
+knitr::kable(Adjacency_matrix_true|>kable_styling(font_size = 10))
+```
+</div> <div>
+```{r,echo=FALSE}
+Adjacency_matrix_means = matrix(colMeans(Adjacency_matrix_list[(0.75 * num_iter):num_iter,]),num_covariates,num_covariates)
+knitr::kable(Adjacency_matrix_means|>kable_styling(font_size = 10))
+```
+</div> </div>
+
+Below we again plot the credible intervals for each of the present causal effect coefficients, where the red line represents the true causal weights. As seen with the provided credible intervals for the non zero causal weights, each credible interval is close to the true red line. Therefore, this indicates the method can both accurately determine causal weights and structure. 
+
+```{r,echo=FALSE}
+num_causal = length(which(c(Adjacency_matrix_true)==1))
+Causal_effect_matrix_non_zero = results_list$Causal_effect_matrix_list[(0.75*num_iter):num_iter,which(c(Adjacency_matrix_true)==1)]
+x = 1:num_causal
+#column_means = colMeans(Causal_effect_matrix_non_zero)
+
+#plot(x,column_means)
+
+
+confint_matrix = matrix(0,num_causal,2)
+
+
+for(i in 1:num_causal){
+  confint_matrix[i,] = quantile(Causal_effect_matrix_non_zero[,i],c(0.025,0.975))
+}
+data = cbind(x,column_means)
+
+ggplot(data,aes(x = x, y = column_means))+
+  geom_point(size = 3) +  # points
+  geom_hline(yintercept = 0.7143305, linetype = "dashed", color = "red")+
+  geom_errorbar(aes(ymin = confint_matrix[,1], ymax = confint_matrix[,2]), width = 0.2) +  # error bars
+  labs(y = "Weight Estimate with 95% CI", x = "X") +
+  theme_minimal()
+```
+
+```{r}
+#par(mfrow=c(2,2))
+#plot(results_lists$gamma_list[(0.75*num_iter):num_iter], type='l', ylab='gamma 1 list')
+#plot(results_lists$gamma_1_list[(0.75*num_iter):num_iter], type='l', ylab='gamma list')
+#plot(results_lists$pi_matrix_list[(0.75*num_iter):num_iter,1], type='l',ylab='pi list')
+#plot(results_lists$mu_matrix_list[(0.75*num_iter):num_iter,1], type='l',ylab='tao list')
+
+#plot(results_lists$mu_matrix_list[,13],type='l')
+#plot(sqrt(results_lists$tao_matrix_list[(0.75*num_iter):num_iter,9]),type='l')
+#plot(results_lists$pi_matrix_list[,1],type='l')
+
+```
+
+```{r,echo=FALSE}
+#Adjacency_matrix_true
+```
+
+```{r,echo=FALSE}
+#matrix(colMeans(Adjacency_matrix_list[(0.75*num_iter):num_iter,]),num_covariates,num_covariates)
+```
+
+
+```{r,echo=FALSE}
+#num_causal = length(which(c(Adjacency_matrix_true)==1))
+#Causal_effect_matrix_non_zero = results_list$Causal_effect_matrix_list[(0.75*num_iter):num_iter,which(c(Adjacency_matrix_true)==1)]
+#x = 1:num_causal
+#column_means = colMeans(Causal_effect_matrix_non_zero)
+
+#plot(x,column_means)
+
+
+#confint_matrix = matrix(0,num_causal,2)
+
+
+#for(i in 1:num_causal){
+ # confint_matrix[i,] = quantile(Causal_effect_matrix_non_zero[,i],c(0.025,0.975))
+#}
+#data = cbind(x,column_means)
+
+#ggplot(data,aes(x = x, y = column_means))+
+ # geom_point(size = 3) +  # points
+ # geom_hline(yintercept = 0.7143305, linetype = "dashed", color = "red")+
+ # geom_errorbar(aes(ymin = confint_matrix[,1], ymax = confint_matrix[,2]), width = 0.2) +  # error bars
+ # labs(y = "Weight Estimate with 95% CI", x = "X") +
+ # theme_minimal()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

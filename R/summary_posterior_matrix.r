@@ -1,0 +1,57 @@
+#' Generate summary based on posterior sample provided
+#'
+#' @description
+#' Compute posterior summaries from a matrix of MCMC samples. When \code{adjacency = TRUE}, the function treats each row as a flattened
+#' adjacency matrix and returns edge wise posterior inclusion probabilities and posterior probabilities for unique graph structures. Otherwise,
+#' the function treats each column as a parameter and generates a credible and hpd interval based on the level input.
+#'
+#' @param posterior_matrix numeric posterior sample matrix, where each row corresponds to the MCMC iteration
+#' @param adjacency logical flag, if TRUE, the function treats the input as sampled graph structures (one per iteration) and performs posterior sample analysis.
+#' @param level Credible level for the intervals, given as a probability between 0 and 1. Only utilized for posterior analysis of non graph structure samples.
+#' @return
+#' If \code{adjacency = TRUE}, a list with components:
+#' \itemize{
+#'    \item \code{pip_matrix:} numeric matrix (P), with edge wise posterior inclusion probabilities, where entry P_{ij} is the proportion of sampled graphs contain an edge from i to j.
+#'    \item \code{pip_graph_results:} list in which each element corresponds to a unique graph structure and the proportion of times that structure appears in the posterior graph samples.
+#' }
+#'
+#'
+#' If \code{adjacency = FALSE}, a list with components:
+#' \itemize{
+#'   \item \code{ci_matrix:} numeric matrix, where each row is the equal-tailed credible interval for each parameter provide in the posterior matrix at the
+#'         specified level (e.g., 2.5\% and 97.5\% for \code{level = 0.95}).
+#'   \item \code{hpd_matrix:} numeric matrix, where each row is the HPD interval for each parameter at the same level.
+#' }
+#' @export
+
+
+summary_posterior_matrix = function(posterior_matrix, adjacency = FALSE, level){
+
+  if(adjacency){
+    num_iter = nrow(posterior_matrix)
+    num_features = sqrt(ncol(posterior_matrix))
+    Adjacency_matrix_list_75 = posterior_matrix[(0.75*num_iter):num_iter,]
+    pip_matrix = matrix(colMeans(Adjacency_matrix_list_75), num_features, num_features)
+
+
+    denominator_val = nrow(Adjacency_matrix_list_75)
+    probabilities_vec = rep(0,denominator_val)
+    for(i in 1:denominator_val){
+      probabilities_vec[i] = paste(Adjacency_matrix_list_75[i,],collapse='')
+    }
+    pip_graph_results = sort(table(probabilities_vec),decreasing=TRUE)/denominator_val
+
+    return(list(pip_matrix = pip_matrix, pip_graph_results = pip_graph_results))
+  }
+
+  ci_matrix = matrix(0,ncol(posterior_matrix),3)
+  posterior_75 = posterior_matrix[(0.75*num_iter):num_iter,]
+
+  hpd_matrix = HDInterval::hdi(posterior_75, credMass = level)
+
+  for(i in 1:ncol(posterior_matrix)){
+    ci_matrix[i,] =  quantile(posterior_75[,i],c((1-level)/2,0.5,1-(1-level)/2))
+  }
+
+  return(list(hpd_matrix = hpd_matrix, ci_matrix = ci_matrix))
+}
