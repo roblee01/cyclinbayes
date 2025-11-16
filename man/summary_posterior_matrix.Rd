@@ -4,12 +4,10 @@
 \alias{summary_posterior_matrix}
 \title{Generate summary based on posterior sample provided}
 \usage{
-summary_posterior_matrix(posterior_matrix, adjacency = FALSE, level)
+summary_posterior_matrix(posterior_matrix, level)
 }
 \arguments{
 \item{posterior_matrix}{numeric posterior sample matrix, where each row corresponds to the MCMC iteration}
-
-\item{adjacency}{logical flag, if TRUE, the function treats the input as sampled graph structures (one per iteration) and performs posterior sample analysis.}
 
 \item{level}{Credible level for the intervals, given as a probability between 0 and 1. Only utilized for posterior analysis of non graph structure samples.}
 }

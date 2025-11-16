@@ -12,7 +12,7 @@
 #' @export
 
 
-posterior_adjacency_analysis = function(Adjacency_matrix_list, dist_type){
+select_posterior_graph = function(Adjacency_matrix_list, dist_type){
   num_covariates = sqrt(ncol(Adjacency_matrix_list))
   num_iter = nrow(Adjacency_matrix_list)
 

@@ -6,7 +6,6 @@
 #' the function treats each column as a parameter and generates a credible and hpd interval based on the level input.
 #'
 #' @param posterior_matrix numeric posterior sample matrix, where each row corresponds to the MCMC iteration
-#' @param adjacency logical flag, if TRUE, the function treats the input as sampled graph structures (one per iteration) and performs posterior sample analysis.
 #' @param level Credible level for the intervals, given as a probability between 0 and 1. Only utilized for posterior analysis of non graph structure samples.
 #' @return
 #' If \code{adjacency = TRUE}, a list with components:
@@ -25,7 +24,7 @@
 #' @export
 
 
-summary_posterior_matrix = function(posterior_matrix, adjacency = FALSE, level){
+summary_posterior_matrix = function(posterior_matrix, level){
 
   if(adjacency){
     num_iter = nrow(posterior_matrix)
