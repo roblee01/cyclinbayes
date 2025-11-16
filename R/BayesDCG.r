@@ -20,7 +20,7 @@
 #'
 #' @export
 
-BayesCD <- function(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter) {
+BayesDCG <- function(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter) {
   return(BCD_cpp(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter))
   #.Call('_cyclinbayes_BCD', PACKAGE = 'cyclinbayes', data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_og_tao, b_og_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter)
 }
