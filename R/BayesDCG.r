@@ -1,21 +1,24 @@
 #' Bayesian Cyclic Causal Discovery
 #'
 #' @description
-#' An MCMC sampler to generate a directed cyclic graphs (DCG) from provided data and hyperparameters
+#' BayesDCG fits a Bayesian linear causal model on a directed cyclic graph (DCG) with non-Gaussian errors, returning posterior samples of the adjacency and causal-effect matrices for systems with feedback.
 #'
-#' @param data_matrix numeric matrix (N x p) matrix where N is the sample size and p is the number of features
-#' @param a_mu Hyperparameter for the mean of the normal prior used for each of the cluster means in the mixed normal distribution. Default value is 0.
-#' @param b_mu Hyperparameter for the variance of the normal prior used for each of the cluster means in the mixed normal distribution. Default value is 2.
-#' @param a_gamma Hyperparameter for the first shape of the beta prior for the probability there is a node from one feature to another.
-#' @param b_gamma Hyperparameter for the second shape of the beta prior for the probability there is a node from one feature to another.
-#' @param a_tao Hyperparameter for the shape of the inverse gamma prior for each of the cluster variance in the mixed normal distribution.
-#' @param b_tao Hyperparameter for the scale of the inverse gamma prior for each of the cluster variance in the mixed normal distribution.
-#' @param a_og_tao The shape parameter of the proposal when sampling tao with the adjacency matrix entries
-#' @param b_og_tao The scale parameter of the proposal when sampling tao with the adjacency matrix entries
-#' @param b_og_tao Hyperparameter for the scale of the inverse gamma prior for each of the cluster variance in the mixed normal distribution.
-#' @param alpha Hyperparameter for the concentration for the dirichlet prior for the cluster probability of the corresponding feature.
-#' @param M Number of possible clusters.
-#' @param num_iter The number of iterations for the bayessclingam algorithm
+#' @param data_matrix Numeric matrix of dimension \eqn{N \times p}, where rows correspond to observations and columns correspond to variables (features) included in the causal graph.
+#' @param a_mu Hyperparameter for the mean of the normal prior on each mixture component mean \eqn{\mu_k} in the error mixture model (location parameter). Default value is 0.
+#' @param b_mu Hyperparameter for the variance of the normal prior on each mixture component mean \eqn{\mu_k} (controls how tightly the component means are shrunk toward \code{a_mu}).
+#' Default value is 2.
+#' @param a_gamma First shape parameter of the Beta prior on the edge-inclusion probability \eqn{\gamma} (probability that there is an edge from one node to another).
+#' Default value is 2.
+#' @param b_gamma Second shape parameter of the Beta prior on the edge-inclusion probability \eqn{\gamma}. Along with \code{a_gamma} this controls the expected sparsity of the graph.
+#' Default value is 1.
+#' @param a_tao Shape parameter of the inverse gamma prior on each mixture component variance in the error distribution (controls the prior tail heaviness for component variances).
+#' Default value is 2.
+#' @param b_tao Scale parameter of the inverse gamma prior on each mixture component variance in the error distribution (sets the typical size of the component variances).
+#' Default value is 1.
+#' @param alpha Concentration parameter of the Dirichlet prior on the mixture weights for the normal mixture error distribution (controls how evenly the mixture components are used).
+#' Default value is 1
+#' @param M Integer giving the maximum number of mixture components allowed in the normal mixture error model.
+#' @param num_iter Integer giving the total number of MCMC iterations for the \code{BayesDCG} algorithm.
 #' @return A list (from the C backend) typically containing adjacency and causal-effect matrices and samples/diagnostics.
 #'
 #' @export

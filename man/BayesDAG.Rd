@@ -22,38 +22,48 @@ BayesDAG(
 )
 }
 \arguments{
-\item{data_matrix}{numeric matrix (N x p) matrix where N is the sample size and p is the number of features}
+\item{data_matrix}{Numeric matrix of dimension \eqn{N \times p}, where rows correspond to observations and columns correspond to variables (features) included in the causal graph.}
 
-\item{a_mu}{Hyperparameter for the mean of the normal prior used for each of the cluster means in the mixed normal distribution. Default value is 0.}
+\item{a_mu}{Hyperparameter for the mean of the normal prior on each mixture component mean \eqn{\mu_k} in the error mixture model (location parameter). Default value is 0.}
 
-\item{b_mu}{Hyperparameter for the variance of the normal prior used for each of the cluster means in the mixed normal distribution. Default value is 2.}
+\item{b_mu}{Hyperparameter for the variance of the normal prior on each mixture component mean \eqn{\mu_k} (controls how tightly the component means are shrunk toward \code{a_mu}).
+Default value is 2.}
 
-\item{a_gamma}{Hyperparameter for the first shape of the beta prior for the probability there is a node from one feature to another.}
+\item{a_gamma}{First shape parameter of the Beta prior on the edge-inclusion probability \eqn{\gamma} (probability that there is an edge from one node to another).
+Default value is 0.5.}
 
-\item{b_gamma}{Hyperparameter for the second shape of the beta prior for the probability there is a node from one feature to another.}
+\item{b_gamma}{Second shape parameter of the Beta prior on the edge-inclusion probability \eqn{\gamma}. Along with \code{a_gamma} this controls the expected sparsity of the graph.
+Default value is 0.5.}
 
-\item{a_tao}{Hyperparameter for the shape of the inverse gamma prior for each of the cluster variance in the mixed normal distribution.}
+\item{a_tao}{Shape parameter of the inverse gamma prior on each mixture component variance in the error distribution (controls the prior tail heaviness for component variances).
+Default value is 2.}
 
-\item{b_tao}{Hyperparameter for the scale of the inverse gamma prior for each of the cluster variance in the mixed normal distribution.}
+\item{b_tao}{Scale parameter of the inverse gamma prior on each mixture component variance in the error distribution (sets the typical size of the component variances).
+Default value is 1.}
 
-\item{a_og_tao}{The shape parameter of the proposal when sampling tao with the adjacency matrix entries}
+\item{a_og_tao}{Shape parameter of the proposal distribution used when updating the variance parameters \eqn{\tau} associated with adjacency matrix entries in the MCMC algorithm.
+Default value is 0.01.}
 
-\item{b_og_tao}{Hyperparameter for the scale of the inverse gamma prior for each of the cluster variance in the mixed normal distribution.}
+\item{b_og_tao}{Scale parameter of the proposal distribution used when updating the variance parameters \eqn{\tau} associated with adjacency matrix entries in the MCMC algorithm.
+Default value is 0.01.}
 
-\item{alpha}{Hyperparameter for the concentration for the dirichlet prior for the cluster probability of the corresponding feature.}
+\item{alpha}{Concentration parameter of the Dirichlet prior on the mixture weights for the normal mixture error distribution (controls how evenly the mixture components are used).
+Default value is 1}
 
-\item{M}{Number of possible clusters.}
+\item{M}{Integer giving the maximum number of mixture components allowed in the normal mixture error model.}
 
-\item{num_iter}{The number of iterations for the bayessclingam algorithm}
+\item{num_iter}{Integer giving the total number of MCMC iterations for the \code{BayesDAG} algorithm.}
 }
 \value{
 A list (from the C backend) typically containing adjacency and causal-effect matrices and, optionally, samples/diagnostics.
 }
 \description{
-A bayesian implementation of the lingam method
+Fits a Bayesian Collapsed Gibbs sampler of the LiNGAM model with non-Gaussian errors modeled
+via a finite normal mixture, returning posterior samples for the graph
+structure and causal effect coefficients.
 }
 \examples{
-# Run BayesSCLingam based on simulated example
+# Run BayesDAG based on simulated example
 
 # Data Generation
 set.seed(21)
