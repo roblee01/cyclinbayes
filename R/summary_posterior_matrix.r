@@ -24,7 +24,7 @@
 #' @export
 
 
-summary_posterior_matrix = function(posterior_matrix, level){
+summary_posterior_matrix = function(posterior_matrix, level, adjacency = FALSE){
 
   if(adjacency){
     num_iter = nrow(posterior_matrix)

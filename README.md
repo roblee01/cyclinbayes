@@ -42,6 +42,7 @@ Then load the package:
 ``` r
 library(cyclinbayes)
 library(ggplot2)
+#> Warning: package 'ggplot2' was built under R version 4.5.2
 library(SID)
 library(pcalg)
 #> 
@@ -133,7 +134,7 @@ Adjacency_matrix_true = example_list$Adjacency_matrix_true
 #######################################
 # Run Bayesian LiNGAM (DAG) sampler
 #######################################
-results_lists = BayesSCLingam(
+results_lists = BayesDAG(
   data_matrix,
   params$a_mu,
   params$b_mu,
@@ -171,7 +172,7 @@ Structural Intervention Distance (SID) is only applicable when the
 sampled graphs are DAGs.
 
 ``` r
-Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'shd')
+Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
 Adjacency_matrix
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
@@ -187,7 +188,7 @@ Adjacency_matrix
 ```
 
 ``` r
-Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'sid')
+Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'sid')
 Adjacency_matrix
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
@@ -203,7 +204,7 @@ Adjacency_matrix
 ```
 
 ``` r
-Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'forb')
+Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'forb')
 Adjacency_matrix
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
@@ -266,7 +267,7 @@ demonstrating that the method recovers both causal strength and graph
 structure accurately.
 
 ``` r
-Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list,level = 0.95)
+Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list, level = 0.95)
 hpd_matrix_acyclic = Causal_effect_matrix_summary$hpd_matrix
 ci_matrix_acyclic = Causal_effect_matrix_summary$ci_matrix
 
@@ -366,7 +367,7 @@ Causal_effect_matrix_true = example_list$Causal_effect_matrix_true
 
 ###############################################################################
 
-results_list = BayesCD(
+results_list = BayesDCG(
   data_matrix,
   params$a_mu,
   params$b_mu,
@@ -403,12 +404,12 @@ sampled graphs are DAGs.
 
 ``` r
 # SID is included here for completeness; it is not applicable to general DCGs
-posterior_adjacency_analysis(Adjacency_matrix_list, dist_type = 'sid')
+select_posterior_graph(Adjacency_matrix_list, dist_type = 'sid')
 #> [1] "Graph structure needs to be DAG"
 ```
 
 ``` r
-posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'shd')
+select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
 #>      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
 #> [1,]    0    0    0    0    0    0    0
 #> [2,]    0    0    0    0    0    0    1
@@ -420,7 +421,7 @@ posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'shd')
 ```
 
 ``` r
-posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'forb')
+select_posterior_graph(Adjacency_matrix_list,dist_type = 'forb')
 #>      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
 #> [1,]    0    0    0    0    0    0    0
 #> [2,]    0    0    0    0    0    0    1

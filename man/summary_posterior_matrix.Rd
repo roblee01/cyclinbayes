@@ -4,7 +4,7 @@
 \alias{summary_posterior_matrix}
 \title{Generate summary based on posterior sample provided}
 \usage{
-summary_posterior_matrix(posterior_matrix, level)
+summary_posterior_matrix(posterior_matrix, level, adjacency = FALSE)
 }
 \arguments{
 \item{posterior_matrix}{numeric posterior sample matrix, where each row corresponds to the MCMC iteration}

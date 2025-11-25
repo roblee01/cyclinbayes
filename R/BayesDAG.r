@@ -50,7 +50,7 @@
 #' Adjacency_matrix_true = example_list$Adjacency_matrix_true # true graph structure
 #'
 #'
-#' # Input parameters for the BayesSCLingam function
+#' # Input parameters for the BayesDAG function
 #'
 #' params = list(
 #' a_mu = 0,
@@ -67,7 +67,7 @@
 #' )
 #'
 #'
-#' results_lists = BayesSCLingam(
+#' results_lists = BayesDAG(
 #' data_matrix,
 #' params$a_mu,
 #' params$b_mu,

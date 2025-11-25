@@ -120,7 +120,7 @@ Adjacency_matrix_true = example_list$Adjacency_matrix_true
 #######################################
 # Run Bayesian LiNGAM (DAG) sampler
 #######################################
-results_lists = BayesSCLingam(
+results_lists = BayesDAG(
   data_matrix,
   params$a_mu,
   params$b_mu,
@@ -154,17 +154,17 @@ To obtain a representative estimate of the graph structure, we use the function 
 Distance (SHD) and the Frobenius norm; the Structural Intervention Distance (SID) is only applicable when the sampled graphs are DAGs.
 
 ```{r}
-Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'shd')
+Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
 Adjacency_matrix
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'sid')
+Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'sid')
 Adjacency_matrix
 ```
 
 ```{r}
-Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'forb')
+Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'forb')
 Adjacency_matrix
 ```
 All three selected graphs match the true adjacency matrix:
@@ -188,7 +188,7 @@ gamma_posterior_summary$hpd_interval[,1]
 Next, we illustrate posterior uncertainty for the causal effect coefficients. Below we show the HPD and credible intervals for the nonzero entries of the causal effect matrix, with the dashed red line indicating the true weight. The credible intervals tightly capture the true values, and the HPD estimates lie close to the reference line, demonstrating that the method recovers both causal strength and graph structure accurately.
 
 ```{r}
-Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list,level = 0.95)
+Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list, level = 0.95)
 hpd_matrix_acyclic = Causal_effect_matrix_summary$hpd_matrix
 ci_matrix_acyclic = Causal_effect_matrix_summary$ci_matrix
 
@@ -282,7 +282,7 @@ Causal_effect_matrix_true = example_list$Causal_effect_matrix_true
 
 ###############################################################################
 
-results_list = BayesCD(
+results_list = BayesDCG(
   data_matrix,
   params$a_mu,
   params$b_mu,
@@ -314,13 +314,13 @@ To obtain a representative estimate of the graph structure, we use the function 
 
 ```{r,warning=FALSE, message=FALSE}
 # SID is included here for completeness; it is not applicable to general DCGs
-posterior_adjacency_analysis(Adjacency_matrix_list, dist_type = 'sid')
+select_posterior_graph(Adjacency_matrix_list, dist_type = 'sid')
 ```
 ```{r}
-posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'shd')
+select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
 ```
 ```{r}
-posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'forb')
+select_posterior_graph(Adjacency_matrix_list,dist_type = 'forb')
 ```
 In this example, the selected graphs coincide with the true adjacency matrix:
 ```{r}
