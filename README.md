@@ -7,26 +7,39 @@
 
 <!-- badges: end -->
 
-Cyclinbayes is a R package that provides two bayesian methods for
-estimating directed acyclic graphs (DAG) and directed cyclic graphs
-(DCG).The framework for estimating DAGs provides rigorous uncertainty
-quantification through a probabilistic Bayesian hierarchical model,
-supported by hybrid MCMC sampling combined with simulated annealing.
-Similarly for DCGs, we again incorporate the probabilistic Bayesian
-hierarchical model combined with a random walk algorithm on the Causal
-effect coefficients. These additions to the algorithms improved chain
-mixing, avoiding local optima, and effectively recovering sparsity
-through the spike-and-slab prior formulation. Implemented in Rcpp,
-cyclinbayes leverages optimized C++ routines to handle large-scale,
-high-dimensional datasets.
+Cyclinbayes is an R package implementing Bayesian methods for estimating
+both directed acyclic graphs (DAGs) and directed cyclic graphs (DCGs).
+The package provides full posterior inference for graph structures and
+causal effects using a hierarchical Bayesian model, allowing principled
+uncertainty quantification, edge inclusion probabilities, and credible
+intervals.
+
+For DAGs, cyclinbayes uses a hybrid MCMC scheme that combines collapsed
+Gibbs sampling with simulated annealing to improve mixing and avoid
+local optima. For DCGs, the package performs joint updates of adjacency
+and causal effect coefficients using random walk proposals, enabling
+inference in systems with feedback cycles.For DCGs, the package performs
+joint updates of adjacency and causal-effect coefficients using
+random-walk proposals, enabling inference in systems with feedback
+cycles. In both settings, sparsity is effectively recovered using spike
+and slab priors.
+
+Implemented in Rcpp, cyclinbayes leverages optimized C++ routines to
+handle large-scale, high-dimensional datasets.
 
 ## Installation from Github
 
-First, you will need to install the devtools package. From R, we type
+You can install the development version of cyclinbayes from GitHub using
+remotes:
 
 ``` r
 #install.packages("remotes")
 #remotes::install_github("roblee01/cyclinbayes")
+```
+
+Then load the package:
+
+``` r
 library(cyclinbayes)
 library(ggplot2)
 library(SID)
@@ -38,66 +51,88 @@ library(pcalg)
 #>     randomDAG
 ```
 
-We load
-
-You can install the development version of cyclinbayes from
-[GitHub](https://github.com/) with:
-
-``` r
-#remotes::install_github("roblee01/cyclinbayes")
-```
-
 ## Example
 
-This is an example how the first acyclic Bayesian lingam method works.
-Let p denote the number of features in the matrix and n be the sample
-size of the data. We generate simulation error terms
-$\epsilon_{i}^{(q)}$ from the distribution for $i=1\ldots,p$ and
-$q=1\ldots,n$: a finite mixture model
-$\sum_{k=1}^{M}\pi_{ik}N(\mu_{ik},\tau_{ik})$, where $M = 2$,
-$(\mu_{i1},\mu_{i2})=(-0.5,0.5)$, and $(\tau_{i1},\tau_{i2})=(0.1,0.3)$,
-and $(\pi_{i1},\pi_{i2})=(0.5,0.5)$. Then to create the true causal
-effect matrix, for each entry in the matrix, we sample either 0 or 1
-based on sparsity probability $\Delta=0.9$ until the matrix $B$
-represents the adjacency matrix of a DAG. we use the generated causal
-effect matrix and perform the operation, $\epsilon_{i}^{(q)}$ from
-$\vec{Y}_{i} = (I-B)^{-1}\vec{\epsilon}_{i}$ , where
-$\vec{\epsilon}_{i} = (\epsilon_{i}^{(1)},\ldots,\epsilon_{i}^{(n)})^{T}$
-and $\vec{Y}_{i}=(Y_{i}^{(1)},\ldots,Y_{i}^{(n)})^{T}$.
+Below is a simple example demonstrating how to use the Bayesian LiNGAM
+(DAG) sampler. Let $p$ denote the number of variables and $n$ the sample
+size. We generate error terms from a finite Gaussian mixture model:
+
+$$
+\epsilon_i^{(q)} \sim \sum_{k=1}^{M} \pi_{ik} N(\mu_{ik}, \tau_{ik}),
+$$
+
+with mixture components
+
+$$
+M = 2, \quad 
+(\mu_{i1}, \mu_{i2}) = (-0.5, 0.5), \quad
+(\tau_{i1}, \tau_{i2}) = (0.1, 0.3), \quad
+(\pi_{i1}, \pi_{i2}) = (0.5, 0.5).
+$$
+
+We generate a sparse causal-effect matrix $B$ by sampling edges
+independently with probability $\Delta = 0.9$ until the adjacency matrix
+is acyclic.
+
+Given $B$ and the error matrix $\epsilon$, the data are generated via
+
+$$
+Y = (I - B)^{-1}\epsilon,
+$$
+
+where the $i$-th row of $Y$ corresponds to
+
+$$
+(Y_i^{(1)}, \ldots, Y_i^{(n)})^\top.
+$$
 
 ``` r
-#library(cyclinbayes)
+#set.seed for reproducibility
 set.seed(21)
-N = 300 # Sample size for the test data
-num_covariates = 10 # number of features for test data
-M = 2 # Number of finite clusters for mixed normal in likelihood
-num_iter = 10000 # Number of iterations MCMC runs
 
 
-####################################### hyperparameter setup ###################################################
+#######################################
+# Simulation and MCMC settings
+#######################################
+N              <- 300    # sample size
+num_covariates <- 10     # number of features
+M              <- 2      # number of mixture components
+num_iter       <- 10000  # number of MCMC iterations
 
+#######################################
+# Hyperparameter setup
+#######################################
 params = list(
-  a_mu = 0,
-  b_mu = 2,
-  a_gamma = 0.5,
-  b_gamma = 0.5,
+  a_mu      = 0,
+  b_mu      = 2,
+  a_gamma   = 0.5,
+  b_gamma   = 0.5,
   a_gamma_1 = 2,
   b_gamma_1 = 1,
-  a_tao = 2,
-  b_tao = 1,
-  a_og_tao = 0.01,
-  b_og_tao = 0.01,
-  alpha = 1
-) 
+  a_tao     = 2,
+  b_tao     = 1,
+  a_og_tao  = 0.01,
+  b_og_tao  = 0.01,
+  alpha     = 1
+)
 
-############################# generating DAG examples ##########################################################
-example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
+#######################################
+# Generate DAG example data
+#######################################
+example_list = generates_examples_DAG(
+  num_covariates = num_covariates,
+  N = N,
+  M = M,
+  prob_sparsity = 0.9,
+  seed_input = 21
+)
 
 data_matrix = example_list$data_matrix
 Adjacency_matrix_true = example_list$Adjacency_matrix_true
 
-#######################################################################################
-
+#######################################
+# Run Bayesian LiNGAM (DAG) sampler
+#######################################
 results_lists = BayesSCLingam(
   data_matrix,
   params$a_mu,
@@ -113,9 +148,11 @@ results_lists = BayesSCLingam(
   params$alpha,
   M,
   num_iter
-) # Runs the Acyclic algorithm
+)
 
-
+#######################################
+# Extract key posterior summaries
+#######################################
 Adjacency_matrix_means = results_lists$Adjacency_matrix_means 
 Adjacency_matrix_list = results_lists$Adjacency_matrix_list 
 Causal_effect_matrix_list = results_lists$Causal_effect_matrix_list
@@ -126,11 +163,12 @@ tao_matrix_list = results_lists$tao_matrix_list
 pi_matrix_list = results_lists$pi_matrix_list
 ```
 
-To achieve the most accurate graph structure estimate, we apply
-summary_posterior_vec, which selects the best-fitting graph based on
-SHD, SID, and the Frobenius norm. SID is only applicable here because we
-are sampling DAGs. Our primary estimate is based on SHD, followed by SID
-and then the Frobenius norm.
+To obtain a representative estimate of the graph structure, we use the
+function `posterior_adjacency_analysis()`, which selects the posterior
+weighted medoid under a chosen distance metric. For DCGs, we consider
+the Structural Hamming Distance (SHD) and the Frobenius norm; the
+Structural Intervention Distance (SID) is only applicable when the
+sampled graphs are DAGs.
 
 ``` r
 Adjacency_matrix = posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'shd')
@@ -180,7 +218,7 @@ Adjacency_matrix
 #> [10,]    0    0    0    0    0    0    0    1    0     0
 ```
 
-All of this is same as our true Adjacency matrix.
+All three selected graphs match the true adjacency matrix:
 
 ``` r
 Adjacency_matrix_true
@@ -197,17 +235,17 @@ Adjacency_matrix_true
 #> [10,]    0    0    0    0    0    0    0    1    0     0
 ```
 
-We can plot individual parameters, such as the probability of there
-being an edge $\gamma$.
+We can also examine posterior uncertainty for individual parameters. For
+instance, below we plot the posterior samples of the edge inclusion
+probability $\gamma$:
 
 ``` r
-plot(gamma_list[,1][(0.75*num_iter):num_iter],type='l',ylab='gamma value')
+plot(gamma_list[,1][(0.75*num_iter):num_iter],type='l', ylab='gamma value')
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" /> Then
-see the analysis of this parameter, through our function
-summary_posterior_vec. We can get both the 95% credible interval and our
-highest posterior density.
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" /> To
+summarize this parameter, we use summary_posterior_vec() to obtain the
+95% credible interval and highest posterior density (HPD):
 
 ``` r
 gamma_posterior_summary = summary_posterior_vec(gamma_list,0.95)
@@ -219,35 +257,43 @@ gamma_posterior_summary$hpd_interval[,1]
 #> 0.04550084 0.16964687
 ```
 
-Below we show the HPD and credible intervals for the estimated causal
-effect coefficients, where the red line denotes the true causal weights.
-The credible intervals for the nonzero coefficients closely capture the
-true values, and the HPD estimates align near the reference line,
-indicating that the method accurately identifies both causal strength
-and graph structure.
+Next, we illustrate posterior uncertainty for the causal effect
+coefficients. Below we show the HPD and credible intervals for the
+nonzero entries of the causal effect matrix, with the dashed red line
+indicating the true weight. The credible intervals tightly capture the
+true values, and the HPD estimates lie close to the reference line,
+demonstrating that the method recovers both causal strength and graph
+structure accurately.
 
 ``` r
 Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list,level = 0.95)
 hpd_matrix_acyclic = Causal_effect_matrix_summary$hpd_matrix
 ci_matrix_acyclic = Causal_effect_matrix_summary$ci_matrix
 
+#######################################
+# Extracting nonzero HPD intervals
+#######################################
 par(mfrow=c(2,1))
-num_non_zero_coef = ncol(hpd_matrix_acyclic[,which(colSums(hpd_matrix_acyclic)!=0)])
+
+nonzero_cols = which(colSums(hpd_matrix_acyclic) != 0)
+num_non_zero_coef = length(nonzero_cols)
 data_1 = data.frame(cbind(1:num_non_zero_coef,t(hpd_matrix_acyclic[,which(colSums(hpd_matrix_acyclic)!=0)])))
 
-
-ggplot(data_1) +
-  geom_segment(aes(x = lower, xend = upper, y = V1, yend = V1)) +
-  geom_vline(xintercept = 1, linetype = "dashed") +
-  labs(y = NULL, x = "HPD interval") +
+ggplot(data_1) + 
+  geom_segment(aes(x = lower, xend = upper, y = V1, yend = V1)) + 
+  geom_vline(xintercept = 1, linetype = "dashed") + 
+  labs(y = NULL, x = "HPD interval") + 
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
 
 ``` r
 
 
+#######################################
+# Credible intervals
+#######################################
 data_2 = data.frame(ci_matrix_acyclic[which(rowSums(ci_matrix_acyclic)!=0),])
 x = 1:nrow(data_2)
 data_2 = cbind(x,data_2)
@@ -260,41 +306,59 @@ ggplot(data_2, aes(x = x, y = X2)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-2.png" width="100%" />
 
-This is an example of how the cyclic Bayesian sampler works. We generate
-the Adjacency matrix first making sure we get a cyclic graph. Then in
-order to guarantee the inverse of $I-B$, we constrain the spectral
-radius of causal effect matrix B. For now we set the current adjacency
-matrix as B. We then calculate $\rho(B)$, the largest modulus of the
-eigenvalue of B. If $|\rho(B)|\geq 0.95$, we rescale the causal effect
-matrix to be $(0.95/\rho(B))B$, to guarantee the spectral radius is less
-than 0.95.
+Finally, to illustrate the cyclic Bayesian sampler, we first generate an
+adjacency matrix that contains at least one cycle. To ensure that the
+matrix $I - B$ is invertible and the system remains stable, we constrain
+the spectral radius of the causal-effect matrix $B$.
+
+Specifically, we compute $$
+\rho(B) = \max \{ |\lambda| : \lambda \in \mathrm{eig}(B) \},
+$$ and if $\rho(B) \ge 0.95$, we rescale the matrix as $$
+B \leftarrow \frac{0.95}{\rho(B)} \, B,
+$$ which guarantees that the spectral radius is strictly below $0.95$.
+
+This rescaling step ensures numerical stability of the likelihood while
+preserving the relative structure of the causal effects encoded in $B$.
 
 ``` r
 library(cyclinbayes)
+
+#######################################
+# Simulation and MCMC settings
+#######################################
 N = 250 # Sample size for the test data
 num_covariates = 7 # Number of features for test data
 M = 2 # Number of finite clusters for mixed normal in likelihood
 num_iter = 10000 # Number of iterations MCMC runs
 
-####################################### hyperparameter setup ###################################################
-
+#######################################
+# Hyperparameter setup
+#######################################
 params = list(
-  a_mu = 0,
-  b_mu = 2,
-  a_gamma = 2,
-  b_gamma = 1,
+  a_mu      = 0,
+  b_mu      = 2,
+  a_gamma   = 2,
+  b_gamma   = 1,
   a_gamma_1 = 2,
   b_gamma_1 = 1,
-  a_tao = 2,
-  b_tao = 1,
-  alpha = 1
+  a_tao     = 2,
+  b_tao     = 1,
+  alpha     = 1
 )
 
-############################# generating examples #############################
+#######################################
+# Generate DCG example data
+#######################################
 
-example_list = generates_examples_DCG(num_covariates, N, M, 0.9, 21)
+example_list = generates_examples_DCG(
+  num_covariates,
+  N,
+  M,
+  0.9,
+  21
+)
 
 data_matrix = example_list$data_matrix
 Adjacency_matrix_true = example_list$Adjacency_matrix_true
@@ -317,6 +381,9 @@ results_list = BayesCD(
   num_iter
 )
 
+#######################################
+# Extract posterior outputs
+#######################################
 Adjacency_matrix_means = results_list$Adjacency_matrix_means 
 Adjacency_matrix_list = results_list$Adjacency_matrix_list 
 Causal_effect_matrix_list = results_list$Causal_effect_matrix_list
@@ -327,15 +394,16 @@ tao_matrix_list = results_list$tao_matrix_list
 pi_matrix_list = results_list$pi_matrix_list
 ```
 
-To obtain the most accurate estimate of the graph structure, we use
-summary_posterior_vec, which identifies the best-fitting graph based on
-the Structural Hamming Distance (SHD) and the Frobenius norm. The
-Structural Intervention Distance (SID) is not applicable here since the
-sampled graphs are not restricted to DAGs. The example below illustrates
-this procedure.
+To obtain a representative estimate of the graph structure, we use the
+function `posterior_adjacency_analysis()`, which selects the posterior
+weighted medoid under a chosen distance metric. For DCGs, we consider
+the Structural Hamming Distance (SHD) and the Frobenius norm; the
+Structural Intervention Distance (SID) is only applicable when the
+sampled graphs are DAGs.
 
 ``` r
-posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'sid')
+# SID is included here for completeness; it is not applicable to general DCGs
+posterior_adjacency_analysis(Adjacency_matrix_list, dist_type = 'sid')
 #> [1] "Graph structure needs to be DAG"
 ```
 
@@ -363,7 +431,8 @@ posterior_adjacency_analysis(Adjacency_matrix_list,dist_type = 'forb')
 #> [7,]    0    0    1    1    0    0    0
 ```
 
-All of this is same as our true Adjacency matrix.
+In this example, the selected graphs coincide with the true adjacency
+matrix:
 
 ``` r
 Adjacency_matrix_true
@@ -377,36 +446,53 @@ Adjacency_matrix_true
 #> [7,]    0    0    1    1    0    0    0
 ```
 
-We again plot individual parameters, such as the probability of there
-being an edge $\gamma$.
+We can also examine individual parameters, such as the edge inclusion
+probability $\gamma$. Below we plot the MCMC samples for $\gamma$ (after
+the first 75% of iterations) to assess mixing and posterior behavior:
 
 ``` r
 plot(gamma_list[,1][(0.75*num_iter):num_iter],type='l',ylab='gamma value')
 ```
 
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
-Then see the analysis of this parameter, through our function
-summary_posterior_vec. We can get both the 95% credible interval and our
-highest posterior density.
+<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
+
+We can summarize this parameter using `summary_posterior_vec()`, which
+returns both the 95% credible interval and the highest posterior density
+(HPD) interval:
 
 ``` r
-gamma_posterior_summary = summary_posterior_vec(gamma_list,0.95)
+# 95% credible interval + HPD interval
+gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
+
+# Print equal tailed credible interval
 gamma_posterior_summary$credible_interval
 #>      2.5%     97.5% 
 #> 0.1153429 0.6389309
+
+# Print HPD interval (first column corresponds to gamma)
 gamma_posterior_summary$hpd_interval[,1]
 #>      lower      upper 
 #> 0.08967298 0.57338765
 ```
 
+Similarly, we can summarize uncertainty in the causal effect
+coefficients using summary_posterior_matrix(), which computes HPD and
+equal tailed credible intervals for each entry of the posterior causal
+effect matrix:
+
 ``` r
-Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list,level = 0.95)
-hpd_matrix_acyclic = Causal_effect_matrix_summary$hpd_matrix
-ci_matrix_acyclic = Causal_effect_matrix_summary$ci_matrix
+# Compute HPD and CI summaries for causal effect matrix
+Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list, level = 0.95)
+hpd_matrix_cyclic = Causal_effect_matrix_summary$hpd_matrix
+ci_matrix_cyclic = Causal_effect_matrix_summary$ci_matrix
+
+#######################################
+# Extracting nonzero HPD intervals
+#######################################
 
 par(mfrow=c(2,1))
-num_non_zero_coef = ncol(hpd_matrix_acyclic[,which(colSums(hpd_matrix_acyclic)!=0)])
-data_1 = data.frame(cbind(1:num_non_zero_coef,t(hpd_matrix_acyclic[,which(colSums(hpd_matrix_acyclic)!=0)])))
+num_non_zero_coef = ncol(hpd_matrix_cyclic[,which(colSums(hpd_matrix_cyclic)!=0)])
+data_1 = data.frame(cbind(1:num_non_zero_coef,t(hpd_matrix_cyclic[,which(colSums(hpd_matrix_cyclic)!=0)])))
 
 
 ggplot(data_1) +
@@ -416,21 +502,24 @@ ggplot(data_1) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
 
 ``` r
 
+#######################################
+# Credible intervals
+#######################################
 
-data_2 = data.frame(ci_matrix_acyclic[which(rowSums(ci_matrix_acyclic)!=0),])
+data_2 = data.frame(ci_matrix_cyclic[which(rowSums(ci_matrix_cyclic)!=0),])
 x = 1:nrow(data_2)
 data_2 = cbind(x,data_2)
 
 ggplot(data_2, aes(x = x, y = X2)) +
   geom_point(size = 3) +
   geom_hline(yintercept = 0.7143305, linetype = "dashed", color = "red") +
-  geom_errorbar(aes(ymin = X1, ymax = X3), width = 0.2) +  # just X1/X3
+  geom_errorbar(aes(ymin = X1, ymax = X3), width = 0.2) +  
   labs(y = "Weight Estimate with 95% CI", x = "X") +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-17-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-18-2.png" width="100%" />
