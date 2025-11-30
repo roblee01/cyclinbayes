@@ -50,9 +50,18 @@ library(pcalg)
 #> The following object is masked from 'package:SID':
 #> 
 #>     randomDAG
+library(igraph)
+#> 
+#> Attaching package: 'igraph'
+#> The following objects are masked from 'package:stats':
+#> 
+#>     decompose, spectrum
+#> The following object is masked from 'package:base':
+#> 
+#>     union
 ```
 
-## Example
+## Acyclic (DAG) Example
 
 Below is a simple example demonstrating how to use the Bayesian LiNGAM
 (DAG) sampler. Let $p$ denote the number of variables and $n$ the sample
@@ -167,7 +176,7 @@ pi_matrix_list = results_lists$pi_matrix_list
 To obtain a representative estimate of the graph structure, we use the
 function `posterior_adjacency_analysis()`, which selects the posterior
 weighted medoid under a chosen distance metric. For DCGs, we consider
-the Structural Hamming Distance (SHD) and the Frobenius norm; the
+the Structural Hamming Distance (SHD) and the Frobenius norm. The
 Structural Intervention Distance (SID) is only applicable when the
 sampled graphs are DAGs.
 
@@ -219,7 +228,8 @@ Adjacency_matrix
 #> [10,]    0    0    0    0    0    0    0    1    0     0
 ```
 
-All three selected graphs match the true adjacency matrix:
+We observe that the three structures selected using different distance
+metrics are all identical
 
 ``` r
 Adjacency_matrix_true
@@ -236,15 +246,44 @@ Adjacency_matrix_true
 #> [10,]    0    0    0    0    0    0    0    1    0     0
 ```
 
+Before examining posterior summaries, it is helpful to visualize the
+true underlying DAG used in the simulation. This provides a direct point
+of comparison for the estimated graph structures returned by the
+sampler. The plot below displays the ground truth adjacency structure,
+where each directed edge represents a causal relationship from one
+variable to another.
+
+``` r
+#######################################
+# Build directed graph from adjacency matrix
+#######################################
+
+g_true = graph_from_adjacency_matrix(
+Adjacency_matrix_true,
+mode = "directed",
+diag = FALSE
+)
+
+plot(
+  g_true,
+  vertex.size = 20,
+  vertex.label.cex = 0.8,
+  edge.arrow.size = 0.5,
+  main = "True DAG Structure"
+)
+```
+
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+
 We can also examine posterior uncertainty for individual parameters. For
 instance, below we plot the posterior samples of the edge inclusion
 probability $\gamma$:
 
 ``` r
-plot(gamma_list[,1][(0.75*num_iter):num_iter],type='l', ylab='gamma value')
+plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab='Gamma Values')
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" /> To
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" /> To
 summarize this parameter, we use summary_posterior_vec() to obtain the
 95% credible interval and highest posterior density (HPD):
 
@@ -280,14 +319,27 @@ nonzero_cols = which(colSums(hpd_matrix_acyclic) != 0)
 num_non_zero_coef = length(nonzero_cols)
 data_1 = data.frame(cbind(1:num_non_zero_coef,t(hpd_matrix_acyclic[,which(colSums(hpd_matrix_acyclic)!=0)])))
 
-ggplot(data_1) + 
-  geom_segment(aes(x = lower, xend = upper, y = V1, yend = V1)) + 
-  geom_vline(xintercept = 1, linetype = "dashed") + 
-  labs(y = NULL, x = "HPD interval") + 
+nonzero_cols = which(colSums(hpd_matrix_acyclic) != 0)
+
+# subset and transpose so each row = coefficient
+hpd_sub = t(hpd_matrix_acyclic[, nonzero_cols, drop = FALSE])
+colnames(hpd_sub) = c("lower", "upper")  # row1 = lower, row2 = upper
+
+data_1 = as.data.frame(hpd_sub)
+data_1$x = factor(seq_len(nrow(data_1)))
+
+data_1$mid = (data_1$lower + data_1$upper) / 2
+
+
+ggplot(data_1, aes(x = x, y = mid)) +
+  geom_point(size = 3) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +
+  labs(y = "Causal Weight Estimate with HPD Interval", x = "Nonzero causal effect coefficient (index)") +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
 
 ``` r
 
@@ -296,23 +348,25 @@ ggplot(data_1) +
 # Credible intervals
 #######################################
 data_2 = data.frame(ci_matrix_acyclic[which(rowSums(ci_matrix_acyclic)!=0),])
-x = 1:nrow(data_2)
+x = factor(1:nrow(data_2))
 data_2 = cbind(x,data_2)
 
 ggplot(data_2, aes(x = x, y = X2)) +
   geom_point(size = 3) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   geom_errorbar(aes(ymin = X1, ymax = X3), width = 0.2) +  # just X1/X3
-  labs(y = "Weight Estimate with 95% CI", x = "X") +
+  labs(y = "Causal Weight Estimate with 95% CI", x = "Nonzero causal effect coefficient (index)") +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-10-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-11-2.png" width="100%" />
 
-Finally, to illustrate the cyclic Bayesian sampler, we first generate an
+## Cyclic (DCG) Example
+
+Finally, to illustrate the cyclic bayesian sampler, we first generate an
 adjacency matrix that contains at least one cycle. To ensure that the
 matrix $I - B$ is invertible and the system remains stable, we constrain
-the spectral radius of the causal-effect matrix $B$.
+the spectral radius of the causal effect matrix $B$.
 
 Specifically, we compute $$
 \rho(B) = \max \{ |\lambda| : \lambda \in \mathrm{eig}(B) \},
@@ -398,7 +452,7 @@ pi_matrix_list = results_list$pi_matrix_list
 To obtain a representative estimate of the graph structure, we use the
 function `posterior_adjacency_analysis()`, which selects the posterior
 weighted medoid under a chosen distance metric. For DCGs, we consider
-the Structural Hamming Distance (SHD) and the Frobenius norm; the
+the Structural Hamming Distance (SHD) and the Frobenius norm, the
 Structural Intervention Distance (SID) is only applicable when the
 sampled graphs are DAGs.
 
@@ -447,15 +501,42 @@ Adjacency_matrix_true
 #> [7,]    0    0    1    1    0    0    0
 ```
 
+Before examining posterior summaries, again we will visualize the true
+underlying DAG used in the simulation. The plot below displays the
+ground truth adjacency structure, where each directed edge represents a
+causal relationship from one variable to another.
+
+``` r
+#######################################
+# Build directed graph from adjacency matrix
+#######################################
+
+g_true = graph_from_adjacency_matrix(
+Adjacency_matrix_true,
+mode = "directed",
+diag = FALSE
+)
+
+plot(
+  g_true,
+  vertex.size = 20,
+  vertex.label.cex = 0.8,
+  edge.arrow.size = 0.5,
+  main = "True DAG Structure"
+)
+```
+
+<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
+
 We can also examine individual parameters, such as the edge inclusion
 probability $\gamma$. Below we plot the MCMC samples for $\gamma$ (after
 the first 75% of iterations) to assess mixing and posterior behavior:
 
 ``` r
-plot(gamma_list[,1][(0.75*num_iter):num_iter],type='l',ylab='gamma value')
+plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'gamma value')
 ```
 
-<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
 
 We can summarize this parameter using `summary_posterior_vec()`, which
 returns both the 95% credible interval and the highest posterior density
@@ -492,18 +573,32 @@ ci_matrix_cyclic = Causal_effect_matrix_summary$ci_matrix
 #######################################
 
 par(mfrow=c(2,1))
-num_non_zero_coef = ncol(hpd_matrix_cyclic[,which(colSums(hpd_matrix_cyclic)!=0)])
-data_1 = data.frame(cbind(1:num_non_zero_coef,t(hpd_matrix_cyclic[,which(colSums(hpd_matrix_cyclic)!=0)])))
 
+nonzero_cols = which(colSums(hpd_matrix_cyclic) != 0)
 
-ggplot(data_1) +
-  geom_segment(aes(x = lower, xend = upper, y = V1, yend = V1)) +
-  geom_vline(xintercept = 0.7143305, linetype = "dashed") +
-  labs(y = NULL, x = "HPD interval") +
+hpd_sub = t(hpd_matrix_cyclic[, nonzero_cols, drop = FALSE])
+colnames(hpd_sub) = c("lower", "upper")
+
+# build data frame
+data_cyclic = as.data.frame(hpd_sub)
+data_cyclic$x = factor(seq_len(nrow(data_cyclic)))  # index for plotting
+data_cyclic$mid = (data_cyclic$lower + data_cyclic$upper) / 2
+
+###############################################
+# HPD interval plot (cyclic)
+###############################################
+ggplot(data_cyclic, aes(x = x, y = mid)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +
+  geom_hline(yintercept = 0.7143305, linetype = "dashed", color = "red") +
+  labs(
+    x = "Nonzero causal-effect coefficient (index)",
+    y = "Causal Weight Estimate with HPD Interval"
+  ) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-20-1.png" width="100%" />
 
 ``` r
 
@@ -519,8 +614,8 @@ ggplot(data_2, aes(x = x, y = X2)) +
   geom_point(size = 3) +
   geom_hline(yintercept = 0.7143305, linetype = "dashed", color = "red") +
   geom_errorbar(aes(ymin = X1, ymax = X3), width = 0.2) +  
-  labs(y = "Weight Estimate with 95% CI", x = "X") +
+  labs(y = "Causal Weight Estimate with 95% CI", x = "Nonzero causal-effect coefficient (index)") +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-18-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-20-2.png" width="100%" />
