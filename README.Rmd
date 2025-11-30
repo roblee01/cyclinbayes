@@ -151,7 +151,7 @@ tao_matrix_list = results_lists$tao_matrix_list
 pi_matrix_list = results_lists$pi_matrix_list
 ```
 
-To obtain a representative estimate of the graph structure, we use the function `posterior_adjacency_analysis()`, which selects the posterior weighted medoid under a chosen distance metric. For DCGs, we consider the Structural Hamming
+To obtain a representative estimate of the graph structure, we use the function `select_posterior_graph()`, which selects the posterior weighted medoid under a chosen distance metric. For DCGs, we consider the Structural Hamming
 Distance (SHD) and the Frobenius norm. The Structural Intervention Distance (SID) is only applicable when the sampled graphs are DAGs.
 
 ```{r}
@@ -200,7 +200,7 @@ We can also examine posterior uncertainty for individual parameters. For instanc
 ```{r}
 plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab='Gamma Values')
 ```
-To summarize this parameter, we use summary_posterior_vec() to obtain the 95% credible interval and highest posterior density (HPD):
+To summarize this parameter, we use `summary_posterior_vec()` to obtain the 95% credible interval and highest posterior density (HPD):
 
 ```{r}
 gamma_posterior_summary = summary_posterior_vec(gamma_list,0.95)
@@ -347,7 +347,7 @@ tao_matrix_list = results_list$tao_matrix_list
 pi_matrix_list = results_list$pi_matrix_list
 ```
 
-To obtain a representative estimate of the graph structure, we use the function `posterior_adjacency_analysis()`, which selects the posterior weighted medoid under a chosen distance metric. For DCGs, we consider the Structural Hamming Distance (SHD) and the Frobenius norm, the Structural Intervention Distance (SID) is only applicable when the sampled graphs are DAGs. 
+To obtain a representative estimate of the graph structure, we use the function `select_posterior_graph()`, which selects the posterior weighted medoid under a chosen distance metric. For DCGs, we consider the Structural Hamming Distance (SHD) and the Frobenius norm, the Structural Intervention Distance (SID) is only applicable when the sampled graphs are DAGs. 
 
 ```{r,warning=FALSE, message=FALSE}
 # SID is included here for completeness; it is not applicable to general DCGs
@@ -404,7 +404,7 @@ gamma_posterior_summary$credible_interval
 gamma_posterior_summary$hpd_interval[,1]
 ```
 
-Similarly, we can summarize uncertainty in the causal effect coefficients using summary_posterior_matrix(), which computes HPD and equal tailed credible intervals for each entry of the posterior causal effect matrix:
+Similarly, we can summarize uncertainty in the causal effect coefficients using `summary_posterior_matrix()`, which computes HPD and equal tailed credible intervals for each entry of the posterior causal effect matrix:
 
 ```{r}
 # Compute HPD and CI summaries for causal effect matrix

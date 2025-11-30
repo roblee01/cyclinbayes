@@ -65,23 +65,25 @@ structure and causal effect coefficients.
 \examples{
 # Run BayesDAG based on simulated example
 
-# Data Generation
 set.seed(21)
 
+# Simulation Settings
 
-N = 300 # Sample size of data
-num_covariates = 10 # Number of features for test data
-M = 2 # Number of finite clusters for mixed normal in likelihood
-num_iter = 10000 # Number of iterations MCMC runs
+N = 300 # sample size
+num_covariates = 10 # number of variables (p)
+M = 2 # number of Gaussian mixture components
+num_iter = 10000 # number of MCMC iterations
 
-# function to generate DAG example
+
+# Generate Synthetic DAG Data
+
 example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
 
 data_matrix = example_list$data_matrix # generated data
 Adjacency_matrix_true = example_list$Adjacency_matrix_true # true graph structure
 
 
-# Input parameters for the BayesDAG function
+# Hyperparameter Structure
 
 params = list(
 a_mu = 0,
@@ -97,6 +99,7 @@ b_og_tao = 0.01,
 alpha = 1
 )
 
+# Run Bayesian LiNGAM (DAG) with a small iteration count
 
 results_lists = BayesDAG(
 data_matrix,
@@ -113,8 +116,9 @@ params$b_gamma_1,
 params$alpha,
 M,
 num_iter
-) # Runs the Acyclic algorithm
+)
 
+# Basic posterior summaries
 
 Adjacency_matrix_means = results_lists$Adjacency_matrix_means
 Adjacency_matrix_list = results_lists$Adjacency_matrix_list

@@ -30,13 +30,12 @@
 #' @return A list (from the C backend) typically containing adjacency and causal-effect matrices and, optionally, samples/diagnostics.
 #'
 #' @export
-#'
 #' @examples
 #' # Run BayesDAG based on simulated example
 #'
 #' set.seed(21)
 #'
-#'# Simulation Settings
+#' # Simulation Settings
 #'
 #' N = 300 # sample size
 #' num_covariates = 10 # number of variables (p)

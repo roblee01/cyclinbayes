@@ -174,7 +174,7 @@ pi_matrix_list = results_lists$pi_matrix_list
 ```
 
 To obtain a representative estimate of the graph structure, we use the
-function `posterior_adjacency_analysis()`, which selects the posterior
+function `select_posterior_graph()`, which selects the posterior
 weighted medoid under a chosen distance metric. For DCGs, we consider
 the Structural Hamming Distance (SHD) and the Frobenius norm. The
 Structural Intervention Distance (SID) is only applicable when the
@@ -284,7 +284,7 @@ plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', yl
 ```
 
 <img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" /> To
-summarize this parameter, we use summary_posterior_vec() to obtain the
+summarize this parameter, we use `summary_posterior_vec()` to obtain the
 95% credible interval and highest posterior density (HPD):
 
 ``` r
@@ -450,7 +450,7 @@ pi_matrix_list = results_list$pi_matrix_list
 ```
 
 To obtain a representative estimate of the graph structure, we use the
-function `posterior_adjacency_analysis()`, which selects the posterior
+function `select_posterior_graph()`, which selects the posterior
 weighted medoid under a chosen distance metric. For DCGs, we consider
 the Structural Hamming Distance (SHD) and the Frobenius norm, the
 Structural Intervention Distance (SID) is only applicable when the
@@ -558,7 +558,7 @@ gamma_posterior_summary$hpd_interval[,1]
 ```
 
 Similarly, we can summarize uncertainty in the causal effect
-coefficients using summary_posterior_matrix(), which computes HPD and
+coefficients using `summary_posterior_matrix()`, which computes HPD and
 equal tailed credible intervals for each entry of the posterior causal
 effect matrix:
 

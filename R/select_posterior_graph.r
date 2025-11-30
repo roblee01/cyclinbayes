@@ -10,7 +10,6 @@
 #' @return The best possible graph structure found through finding the smallest distance through finding the weighted medoid based on chosen distance.
 #'
 #' @export
-#'
 #' @examples
 #' # Run BayesDAG simulated example
 #'
