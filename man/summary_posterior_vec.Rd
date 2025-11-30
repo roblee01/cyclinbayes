@@ -74,5 +74,4 @@ gamma_list = results_lists$gamma_list
 gamma_posterior_summary = summary_posterior_vec(gamma_list,0.95)
 gamma_posterior_summary$credible_interval
 gamma_posterior_summary$hpd_interval[,1]
-
 }
