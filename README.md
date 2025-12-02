@@ -522,7 +522,7 @@ plot(
   vertex.size = 20,
   vertex.label.cex = 0.8,
   edge.arrow.size = 0.5,
-  main = "True DAG Structure"
+  main = "True DCG Structure"
 )
 ```
 
