@@ -70,7 +70,21 @@
 #' num_iter
 #' ) # Runs the Acyclic algorithm
 #'
-
+#'
+#' # Extract posterior outputs
+#' Adjacency_matrix_means = results_list$Adjacency_matrix_means
+#' Adjacency_matrix_list = results_list$Adjacency_matrix_list
+#' Causal_effect_matrix_list = results_list$Causal_effect_matrix_list
+#' gamma_list = results_list$gamma_list
+#' gamma_1_list = results_list$gamma_1_list
+#' mu_matrix_list = results_list$mu_matrix_list
+#' tao_matrix_list = results_list$tao_matrix_list
+#' pi_matrix_list = results_list$pi_matrix_list
+#'
+#' # Compute HPD and CI summaries for causal effect matrix
+#' Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list, level = 0.95)
+#' hpd_matrix_cyclic = Causal_effect_matrix_summary$hpd_matrix
+#' ci_matrix_cyclic = Causal_effect_matrix_summary$ci_matrix
 
 summary_posterior_matrix = function(posterior_matrix, level, adjacency = FALSE){
 

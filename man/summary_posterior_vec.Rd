@@ -25,7 +25,8 @@ specified level (e.g., 2.5\% and 97.5\% for \code{level = 0.95}).
 Computes basic posterior summaries for a univariate parameter, including the posterior mean, a central equal-tailed credible interval, and a highest posterior density (HPD) interval.
 }
 \examples{
-# Run BayesDAG simulated example
+
+# Run BayessDAG simulated example
 
 N = 300
 num_covariates = 10
@@ -70,8 +71,23 @@ M,
 num_iter
 ) # Runs the Acyclic algorithm
 
-gamma_list = results_lists$gamma_list
-gamma_posterior_summary = summary_posterior_vec(gamma_list,0.95)
+
+# Extract posterior outputs
+Adjacency_matrix_means = results_list$Adjacency_matrix_means
+Adjacency_matrix_list = results_list$Adjacency_matrix_list
+Causal_effect_matrix_list = results_list$Causal_effect_matrix_list
+gamma_list = results_list$gamma_list
+gamma_1_list = results_list$gamma_1_list
+mu_matrix_list = results_list$mu_matrix_list
+tao_matrix_list = results_list$tao_matrix_list
+pi_matrix_list = results_list$pi_matrix_list
+
+# 95\% credible interval + HPD interval
+gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
+
+# Print equal tailed credible interval
 gamma_posterior_summary$credible_interval
+
+# Print HPD interval (first column corresponds to gamma)
 gamma_posterior_summary$hpd_interval[,1]
 }
