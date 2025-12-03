@@ -179,16 +179,16 @@ weighted medoid under a chosen distance metric. The available distance
 metrics are:
 
 - **Structural Hamming Distance (SHD):**  
-  Counts the number of single-edge edits (additions, deletions, or
+  Counts the number of single edge edits (additions, deletions, or
   reversals) required to transform one graph into another.
 
 - **Structural Intervention Distance (SID):**  
   Measures how many node pairs $(i, j)$ imply different intervention
   distributions $P(\vec{Y}_{j} \mid \mathrm{do}(\vec{Y}_{i}))$.  
-  (Applicable only when the posterior graphs are DAGs.)
+  (Applicable only when the posterior graphs are DAGs)
 
 - **Frobenius norm:**  
-  A continuous, matrix-based distance  
+  A continuous, matrix based distance  
   $$
   \lVert \mathcal{G}_1 - \mathcal{G}_2 \rVert_F
   $$  
@@ -253,7 +253,7 @@ Adjacency_matrix
 ```
 
 We observe that the three structures selected using different distance
-metrics are all identical
+metrics are all identical.
 
 ``` r
 Adjacency_matrix_true
