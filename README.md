@@ -7,7 +7,7 @@
 
 <!-- badges: end -->
 
-Cyclinbayes is an R package implementing Bayesian methods for estimating
+Cyclinbayes is an R package implementing bayesian methods for estimating
 both directed acyclic graphs (DAGs) and directed cyclic graphs (DCGs).
 The package provides full posterior inference for graph structures and
 causal effects using a hierarchical Bayesian model, allowing principled
@@ -18,14 +18,14 @@ For DAGs, cyclinbayes uses a hybrid MCMC scheme that combines collapsed
 Gibbs sampling with simulated annealing to improve mixing and avoid
 local optima. For DCGs, the package performs joint updates of adjacency
 and causal effect coefficients using random walk proposals, enabling
-inference in systems with feedback cycles.For DCGs, the package performs
-joint updates of adjacency and causal-effect coefficients using
-random-walk proposals, enabling inference in systems with feedback
+inference in systems with feedback cycles. For DCGs, the package
+performs joint updates of adjacency and causal effect coefficients using
+random walk proposals, enabling inference in systems with feedback
 cycles. In both settings, sparsity is effectively recovered using spike
 and slab priors.
 
 Implemented in Rcpp, cyclinbayes leverages optimized C++ routines to
-handle large-scale, high-dimensional datasets.
+handle large scale, high dimensional datasets.
 
 ## Installation from Github
 
@@ -80,7 +80,7 @@ M = 2, \quad
 (\pi_{i1}, \pi_{i2}) = (0.5, 0.5).
 $$
 
-We generate a sparse causal-effect matrix $B$ by sampling edges
+We generate a sparse causal effect matrix $B$ by sampling edges
 independently with probability $\Delta = 0.9$ until the adjacency matrix
 is acyclic.
 
@@ -90,7 +90,7 @@ $$
 Y = (I - B)^{-1}\epsilon,
 $$
 
-where the $i$-th row of $Y$ corresponds to
+where the $i$th row of $Y$ corresponds to
 
 $$
 (Y_i^{(1)}, \ldots, Y_i^{(n)})^\top.
@@ -104,26 +104,26 @@ set.seed(21)
 #######################################
 # Simulation and MCMC settings
 #######################################
-N              <- 300    # sample size
-num_covariates <- 10     # number of features
-M              <- 2      # number of mixture components
-num_iter       <- 10000  # number of MCMC iterations
+N = 300    # sample size
+num_covariates = 10     # number of features
+M = 2      # number of mixture components
+num_iter = 10000  # number of MCMC iterations
 
 #######################################
 # Hyperparameter setup
 #######################################
 params = list(
-  a_mu      = 0,
-  b_mu      = 2,
-  a_gamma   = 0.5,
-  b_gamma   = 0.5,
+  a_mu = 0,
+  b_mu  = 2,
+  a_gamma = 0.5,
+  b_gamma = 0.5,
   a_gamma_1 = 2,
   b_gamma_1 = 1,
-  a_tao     = 2,
-  b_tao     = 1,
-  a_og_tao  = 0.01,
-  b_og_tao  = 0.01,
-  alpha     = 1
+  a_tao = 2,
+  b_tao = 1,
+  a_og_tao = 0.01,
+  b_og_tao = 0.01,
+  alpha = 1
 )
 
 #######################################
@@ -175,12 +175,30 @@ pi_matrix_list = results_lists$pi_matrix_list
 
 To obtain a representative estimate of the graph structure, we use the
 function `select_posterior_graph()`, which selects the posterior
-weighted medoid under a chosen distance metric. For DCGs, we consider
-the Structural Hamming Distance (SHD) and the Frobenius norm. The
-Structural Intervention Distance (SID) is only applicable when the
-sampled graphs are DAGs.
+weighted medoid under a chosen distance metric. The available distance
+metrics are:
+
+- **Structural Hamming Distance (SHD):**  
+  Counts the number of single-edge edits (additions, deletions, or
+  reversals) required to transform one graph into another.
+
+- **Structural Intervention Distance (SID):**  
+  Measures how many node pairs $(i, j)$ imply different intervention
+  distributions $P(\vec{Y}_{j} \mid \mathrm{do}(\vec{Y}_{i}))$.  
+  (Applicable only when the posterior graphs are DAGs.)
+
+- **Frobenius norm:**  
+  A continuous, matrix-based distance  
+  $$
+  \lVert \mathcal{G}_1 - \mathcal{G}_2 \rVert_F
+  $$  
+  capturing the magnitude of adjacency differences, suitable for both
+  cyclic and acyclic graphs.
 
 ``` r
+#############################################
+# Best Graph Structure determined through shd
+############################################
 Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
 Adjacency_matrix
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
@@ -197,6 +215,9 @@ Adjacency_matrix
 ```
 
 ``` r
+############################################
+# Best Graph Structure determined through sid
+############################################
 Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'sid')
 Adjacency_matrix
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
@@ -213,6 +234,9 @@ Adjacency_matrix
 ```
 
 ``` r
+########################################################
+# Best Graph Structure determined through forbenius norm
+########################################################
 Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'forb')
 Adjacency_matrix
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
@@ -275,17 +299,24 @@ plot(
 
 <img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
-We can also examine posterior uncertainty for individual parameters. For
-instance, below we plot the posterior samples of the edge inclusion
-probability $\gamma$:
+Many model parameters in cyclinbayes are stored as scalar values at each
+MCMC iteration, producing a posterior sample vector. As an illustration,
+we examine the global edge inclusion probability $\gamma$. Below we plot
+its posterior trace to assess mixing and verify that the sampler
+explores the parameter space adequately.
 
 ``` r
-plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab='Gamma Values')
+plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'Gamma Values')
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" /> To
-summarize this parameter, we use `summary_posterior_vec()` to obtain the
-95% credible interval and highest posterior density (HPD):
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+
+To summarize such scalar (low dimensional) hyperparameters, the
+uncertainty quantification is handled by the function
+`summary_posterior_vec()`, which takes vector of posterior draws and
+returns both equal tailed credible intervals and highest posterior
+density (HPD) intervals at a user specified level. Below we do the
+uncertainty quantification for $\gamma$ at a 95% level.
 
 ``` r
 gamma_posterior_summary = summary_posterior_vec(gamma_list,0.95)
@@ -297,11 +328,19 @@ gamma_posterior_summary$hpd_interval[,1]
 #> 0.04550084 0.16964687
 ```
 
-Next, we illustrate posterior uncertainty for the causal effect
-coefficients. Below we show the HPD and credible intervals for the
-nonzero entries of the causal effect matrix, with the dashed red line
-indicating the true weight. The credible intervals tightly capture the
-true values, and the HPD estimates lie close to the reference line,
+Matrix valued parameters, such as the causal effect matrix $B$ or the
+mixture means and variances $(\mu_{ik},\tau_{ik})$, are stored as
+flattened matrices, where each column corresponds to a specific
+parameter entry and each row represents one MCMC iteration. These
+quantities are summarized using `summary_posterior_matrix()`, which
+computes HPD and equal tailed credible intervals column wise, returning
+interval estimates for every underlying matrix element.
+
+To illustrate, we examine posterior uncertainty in the causal effect
+coefficients. The figure below displays the HPD and credible intervals
+for all nonzero entries of $B$, with the dashed red line indicating the
+true weight. The credible intervals tightly capture the ground truth
+values, and the HPD estimates lie close to the reference line,
 demonstrating that the method recovers both causal strength and graph
 structure accurately.
 
@@ -345,7 +384,7 @@ ggplot(data_1, aes(x = x, y = mid)) +
 
 
 #######################################
-# Credible intervals
+# Extracting nonzero Credible intervals
 #######################################
 data_2 = data.frame(ci_matrix_acyclic[which(rowSums(ci_matrix_acyclic)!=0),])
 x = factor(1:nrow(data_2))
@@ -451,13 +490,13 @@ pi_matrix_list = results_list$pi_matrix_list
 
 To obtain a representative estimate of the graph structure, we use the
 function `select_posterior_graph()`, which selects the posterior
-weighted medoid under a chosen distance metric. For DCGs, we consider
-the Structural Hamming Distance (SHD) and the Frobenius norm, the
-Structural Intervention Distance (SID) is only applicable when the
-sampled graphs are DAGs.
+weighted medoid under a chosen distance metric. We use the same distance
+metrics, but the Structural Intervention Distance (SID) is only
+applicable when the sampled graphs are DAGs.
 
 ``` r
-# SID is included here for completeness; it is not applicable to general DCGs
+# SID is shown for completeness, it applies only when all posterior graphs are DAGs. If any sampled graph contains a cycle, SID-based selection will produce an error.
+
 select_posterior_graph(Adjacency_matrix_list, dist_type = 'sid')
 #> [1] "Graph structure needs to be DAG"
 ```
@@ -528,9 +567,10 @@ plot(
 
 <img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
 
-We can also examine individual parameters, such as the edge inclusion
-probability $\gamma$. Below we plot the MCMC samples for $\gamma$ (after
-the first 75% of iterations) to assess mixing and posterior behavior:
+Similarly to acyclic case, we examine individual parameters similarly.
+We consider the edge inclusion probability $\gamma$ as an example. Below
+we plot the MCMC samples for $\gamma$ (after the first 75% of
+iterations) to assess mixing and posterior behavior:
 
 ``` r
 plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'gamma value')
@@ -538,9 +578,9 @@ plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', yl
 
 <img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
 
-We can summarize this parameter using `summary_posterior_vec()`, which
-returns both the 95% credible interval and the highest posterior density
-(HPD) interval:
+We again summarize $\gamma$ parameter using `summary_posterior_vec()`,
+which returns both the 95% credible interval and the highest posterior
+density (HPD) interval:
 
 ``` r
 # 95% credible interval + HPD interval
@@ -557,10 +597,11 @@ gamma_posterior_summary$hpd_interval[,1]
 #> 0.08967298 0.57338765
 ```
 
-Similarly, we can summarize uncertainty in the causal effect
-coefficients using `summary_posterior_matrix()`, which computes HPD and
-equal tailed credible intervals for each entry of the posterior causal
-effect matrix:
+For the matrix valued outputs, similar to the acyclic case, we can
+summarize uncertainty in the causal effect coefficients using
+`summary_posterior_matrix()`, which computes HPD and equal tailed
+credible intervals for each specific parameter entry represented as
+columns of the matrix outputs.
 
 ``` r
 # Compute HPD and CI summaries for causal effect matrix
