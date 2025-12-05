@@ -139,7 +139,51 @@ example_list = generates_examples_DAG(
 
 data_matrix = example_list$data_matrix
 Adjacency_matrix_true = example_list$Adjacency_matrix_true
+```
 
+Before examining posterior summaries, it is helpful to visualize the
+true underlying DAG used in the simulation. This provides a direct point
+of comparison for the estimated graph structures returned by the
+sampler. The plot below displays the ground truth adjacency structure,
+where each directed edge represents a causal relationship from one
+variable to another.
+
+``` r
+#######################################
+# Build directed graph from adjacency matrix
+#######################################
+
+g_true = graph_from_adjacency_matrix(
+Adjacency_matrix_true,
+mode = "directed",
+diag = FALSE
+)
+
+plot(
+  g_true,
+  vertex.size = 20,
+  vertex.label.cex = 0.8,
+  edge.arrow.size = 0.5,
+  main = "True DAG Structure"
+)
+```
+
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
+
+With the simulated dataset and prior hyperparameters specified above, we
+now fit the Bayesian LiNGAM model using `BayesDAG()`. The function
+returns posterior samples for:
+
+- Adjacency matrices
+- Causal effect matrices
+- mixture model parameters
+- global parameters (e.g. $\gamma$, $\gamma_1$)
+
+These outputs allow users to perform full posterior uncertainty
+quantification (edge probabilities, HPD intervals, credible intervals,
+and posterior graph selection).
+
+``` r
 #######################################
 # Run Bayesian LiNGAM (DAG) sampler
 #######################################
@@ -175,7 +219,9 @@ pi_matrix_list = results_lists$pi_matrix_list
 
 To obtain a representative estimate of the graph structure, we use the
 function `select_posterior_graph()`, which selects the posterior
-weighted medoid under a chosen distance metric. The available distance
+weighted medoid, the graph that minimizes the weight distance to all
+other sampled adjacency matrices. Users may select one of the build in
+distances or supply their own custom functions. The available distance
 metrics are:
 
 - **Structural Hamming Distance (SHD):**  
@@ -187,20 +233,22 @@ metrics are:
   distributions $P(\vec{Y}_{j} \mid \mathrm{do}(\vec{Y}_{i}))$.  
   (Applicable only when the posterior graphs are DAGs)
 
-- **Frobenius norm:**  
-  A continuous, matrix based distance  
-  $$
-  \lVert \mathcal{G}_1 - \mathcal{G}_2 \rVert_F
-  $$  
-  capturing the magnitude of adjacency differences, suitable for both
-  cyclic and acyclic graphs.
+Users may also specify
+
+``` r
+dist_type = 'custom'
+dist_fun = function(A,B){...}
+```
+
+where $A$ and $B$ are $p\times p$ adjacency matrices. The function must
+return a non negative scalar distance.
 
 ``` r
 #############################################
 # Best Graph Structure determined through shd
 ############################################
-Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
-Adjacency_matrix
+Adjacency_matrix_shd = select_posterior_graph(Adjacency_matrix_list, dist_type = 'shd')
+Adjacency_matrix_shd
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
 #>  [2,]    0    0    0    0    0    0    0    0    0     1
@@ -218,8 +266,8 @@ Adjacency_matrix
 ############################################
 # Best Graph Structure determined through sid
 ############################################
-Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'sid')
-Adjacency_matrix
+Adjacency_matrix_sid = select_posterior_graph(Adjacency_matrix_list,dist_type = 'sid')
+Adjacency_matrix_sid
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
 #>  [2,]    0    0    0    0    0    0    0    0    0     1
@@ -233,12 +281,16 @@ Adjacency_matrix
 #> [10,]    0    0    0    0    0    0    0    1    0     0
 ```
 
+As an example for a custom function, we could count the total number of
+edge mismatches.
+
 ``` r
-########################################################
-# Best Graph Structure determined through forbenius norm
-########################################################
-Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'forb')
-Adjacency_matrix
+custom_edge_mismatch = function(A, B) {
+  return(sum(abs(A - B)))
+}
+
+Adjacency_matrix_custom = select_posterior_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
+Adjacency_matrix_custom
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
 #>  [2,]    0    0    0    0    0    0    0    0    0     1
@@ -270,46 +322,38 @@ Adjacency_matrix_true
 #> [10,]    0    0    0    0    0    0    0    1    0     0
 ```
 
-Before examining posterior summaries, it is helpful to visualize the
-true underlying DAG used in the simulation. This provides a direct point
-of comparison for the estimated graph structures returned by the
-sampler. The plot below displays the ground truth adjacency structure,
-where each directed edge represents a causal relationship from one
-variable to another.
+In addition to choosing the best possible graphs through distance based
+medoids, users may evaluate how often a graph appears in structure
+appears in the posterior samples. This provides posterior support for
+any candidate DAG, such as the true graph.
+
+The function `posterior_graph_mass()` computes the posterior mass
+(relative frequency) of a graph by checking whether all its edges are
+present on each of the posterior graph structures. Using the adjacency
+samples from the acyclic example above, we can compute the posterior
+mass assigned to the true graph:
 
 ``` r
-#######################################
-# Build directed graph from adjacency matrix
-#######################################
-
-g_true = graph_from_adjacency_matrix(
-Adjacency_matrix_true,
-mode = "directed",
-diag = FALSE
-)
-
-plot(
-  g_true,
-  vertex.size = 20,
-  vertex.label.cex = 0.8,
-  edge.arrow.size = 0.5,
-  main = "True DAG Structure"
-)
+true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
+posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
+#> [1] 1
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+Since the value is at 1, this indicates that the sampler visited the
+true graph structure repeatedly on every possible posterior graph
+structure.
 
-Many model parameters in cyclinbayes are stored as scalar values at each
-MCMC iteration, producing a posterior sample vector. As an illustration,
-we examine the global edge inclusion probability $\gamma$. Below we plot
-its posterior trace to assess mixing and verify that the sampler
-explores the parameter space adequately.
+Many parameters in cyclinbayes are recorded as single scalar values at
+each MCMC iteration, resulting in a posterior sample vector for each
+such quantity. As an illustration, we examine the global edge inclusion
+probability $\gamma$. Below we plot its posterior trace to assess mixing
+and verify that the sampler explores the parameter space adequately.
 
 ``` r
 plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'Gamma Values')
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
 
 To summarize such scalar (low dimensional) hyperparameters, the
 uncertainty quantification is handled by the function
@@ -319,13 +363,13 @@ density (HPD) intervals at a user specified level. Below we do the
 uncertainty quantification for $\gamma$ at a 95% level.
 
 ``` r
-gamma_posterior_summary = summary_posterior_vec(gamma_list,0.95)
+gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
 gamma_posterior_summary$credible_interval
 #>       2.5%      97.5% 
-#> 0.05189561 0.17901237
+#> 0.05173893 0.18084576
 gamma_posterior_summary$hpd_interval[,1]
 #>      lower      upper 
-#> 0.04550084 0.16964687
+#> 0.04596706 0.17267475
 ```
 
 Matrix valued parameters, such as the causal effect matrix $B$ or the
@@ -378,7 +422,7 @@ ggplot(data_1, aes(x = x, y = mid)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
 ``` r
 
@@ -398,7 +442,7 @@ ggplot(data_2, aes(x = x, y = X2)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-2.png" width="100%" />
 
 ## Cyclic (DCG) Example
 
@@ -457,9 +501,50 @@ example_list = generates_examples_DCG(
 data_matrix = example_list$data_matrix
 Adjacency_matrix_true = example_list$Adjacency_matrix_true
 Causal_effect_matrix_true = example_list$Causal_effect_matrix_true
+```
 
-###############################################################################
+Before examining posterior summaries, again we will visualize the true
+underlying DCG used in the simulation. The plot below displays the
+ground truth adjacency structure.
 
+``` r
+#######################################
+# Build directed graph from adjacency matrix
+#######################################
+
+g_true = graph_from_adjacency_matrix(
+Adjacency_matrix_true,
+mode = "directed",
+diag = FALSE
+)
+
+plot(
+  g_true,
+  vertex.size = 20,
+  vertex.label.cex = 0.8,
+  edge.arrow.size = 0.5,
+  main = "True DCG Structure"
+)
+```
+
+<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
+
+With the simulated dataset and prior hyperparameters specified above, we
+now fit the Bayesian LiNGAM model using `BayesDCG()`. The function,
+similar to `BayesDAG()`, returns posterior samples for:
+
+- Adjacency matrices
+- Causal effect matrices
+- mixture model parameters
+- global parameters (e.g. $\gamma$, $\gamma_1$)
+
+These outputs allow users to perform full posterior uncertainty
+quantification.
+
+``` r
+#######################################
+# Run Bayesian DCG sampler
+#######################################
 results_list = BayesDCG(
   data_matrix,
   params$a_mu,
@@ -488,21 +573,34 @@ tao_matrix_list = results_list$tao_matrix_list
 pi_matrix_list = results_list$pi_matrix_list
 ```
 
-To obtain a representative estimate of the graph structure, we use the
-function `select_posterior_graph()`, which selects the posterior
+To obtain a representative estimate of the graph structure, we again use
+the function `select_posterior_graph()`, which selects the posterior
 weighted medoid under a chosen distance metric. We use the same distance
 metrics, but the Structural Intervention Distance (SID) is only
-applicable when the sampled graphs are DAGs.
+applicable when the sampled graphs are DAGs. Users may select shd or
+supply their own custom functions.
 
 ``` r
 # SID is shown for completeness, it applies only when all posterior graphs are DAGs. If any sampled graph contains a cycle, SID-based selection will produce an error.
-
-select_posterior_graph(Adjacency_matrix_list, dist_type = 'sid')
-#> [1] "Graph structure needs to be DAG"
+Adjacency_matrix_sid = select_posterior_graph(Adjacency_matrix_list, dist_type = 'sid')
+#> Error in internal_dist(unique_graphs[[i]], unique_graphs[[j]]): SID distance requires all graphs to be DAGs.
+Adjacency_matrix_sid
+#>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+#>  [1,]    0    0    1    0    0    0    0    0    0     0
+#>  [2,]    0    0    0    0    0    0    0    0    0     1
+#>  [3,]    0    0    0    0    0    0    0    0    0     0
+#>  [4,]    0    0    0    0    0    0    0    0    0     0
+#>  [5,]    1    1    0    0    0    0    0    0    0     0
+#>  [6,]    0    0    0    0    0    0    0    0    0     0
+#>  [7,]    0    0    0    1    0    0    0    0    0     1
+#>  [8,]    0    0    0    0    0    1    0    0    0     0
+#>  [9,]    0    0    0    0    0    1    0    0    0     0
+#> [10,]    0    0    0    0    0    0    0    1    0     0
 ```
 
 ``` r
-select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
+Adjacency_matrix_shd = select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
+Adjacency_matrix_shd
 #>      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
 #> [1,]    0    0    0    0    0    0    0
 #> [2,]    0    0    0    0    0    0    1
@@ -513,8 +611,12 @@ select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
 #> [7,]    0    0    1    1    0    0    0
 ```
 
+Using the same custom function as the acyclic case, we get following
+graph structure.
+
 ``` r
-select_posterior_graph(Adjacency_matrix_list,dist_type = 'forb')
+Adjacency_matrix_custom = select_posterior_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
+Adjacency_matrix_custom
 #>      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
 #> [1,]    0    0    0    0    0    0    0
 #> [2,]    0    0    0    0    0    0    1
@@ -540,32 +642,21 @@ Adjacency_matrix_true
 #> [7,]    0    0    1    1    0    0    0
 ```
 
-Before examining posterior summaries, again we will visualize the true
-underlying DAG used in the simulation. The plot below displays the
-ground truth adjacency structure, where each directed edge represents a
-causal relationship from one variable to another.
+In addition to choosing the best possible graphs through distance based
+medoids, users similarly may evaluate how often a graph appears in
+structure appears in the posterior samples using
+`posterior_graph_mass()`. This provides posterior support for any
+candidate DCG, such as the true graph.
 
 ``` r
-#######################################
-# Build directed graph from adjacency matrix
-#######################################
-
-g_true = graph_from_adjacency_matrix(
-Adjacency_matrix_true,
-mode = "directed",
-diag = FALSE
-)
-
-plot(
-  g_true,
-  vertex.size = 20,
-  vertex.label.cex = 0.8,
-  edge.arrow.size = 0.5,
-  main = "True DCG Structure"
-)
+true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
+posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
+#> [1] 1
 ```
 
-<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
+Since the value is at 1, this indicates that the sampler visited the
+true graph structure repeatedly on every possible posterior graph
+structure.
 
 Similarly to acyclic case, we examine individual parameters similarly.
 We consider the edge inclusion probability $\gamma$ as an example. Below
@@ -576,7 +667,7 @@ iterations) to assess mixing and posterior behavior:
 plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'gamma value')
 ```
 
-<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-23-1.png" width="100%" />
 
 We again summarize $\gamma$ parameter using `summary_posterior_vec()`,
 which returns both the 95% credible interval and the highest posterior
@@ -589,12 +680,12 @@ gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
 # Print equal tailed credible interval
 gamma_posterior_summary$credible_interval
 #>      2.5%     97.5% 
-#> 0.1153429 0.6389309
+#> 0.1234888 0.9263258
 
 # Print HPD interval (first column corresponds to gamma)
 gamma_posterior_summary$hpd_interval[,1]
-#>      lower      upper 
-#> 0.08967298 0.57338765
+#>     lower     upper 
+#> 0.0972529 0.8496317
 ```
 
 For the matrix valued outputs, similar to the acyclic case, we can
@@ -639,7 +730,7 @@ ggplot(data_cyclic, aes(x = x, y = mid)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-20-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-25-1.png" width="100%" />
 
 ``` r
 
@@ -659,4 +750,4 @@ ggplot(data_2, aes(x = x, y = X2)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-20-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-25-2.png" width="100%" />

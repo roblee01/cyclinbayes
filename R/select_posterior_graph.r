@@ -4,9 +4,13 @@
 #' Selects a representative graph structure from posterior samples by computing a **weighted medoid** under a chosen distance. Intended for lists of sampled adjacency matrices
 #'
 #' @param posterior_adjacency_matrices A matrix of dimension \code{num_iter × (p*p)} where each row is a flattened adjacency matrix sampled during the posterior (0/1 entries).
-#' @param dist_type Type of distance to use when selecting the medoid (e.g., `"shd"`, `"sid"`,
-#'   `"forb"`).
-
+#' @param dist_type Character string specifying the distance metric.
+#'   One of \code{"shd"}, \code{"sid"}, \code{"forb"}, or \code{"custom"}.
+#' @param dist_fun Optional user-supplied distance function used when
+#'   \code{dist_type = "custom"}. Must have signature \code{dist_fun(A, B)},
+#'   where \code{A} and \code{B} are \eqn{p \times p} adjacency matrices and
+#'   return a non negative scalar distance.
+#' @param burn_in_frac Fraction of iterations to discard as burn in (default 0.75).
 #' @return The best possible graph structure found through finding the smallest distance through finding the weighted medoid based on chosen distance.
 #'
 #' @export
@@ -70,199 +74,67 @@
 
 
 
-select_posterior_graph = function(Adjacency_matrix_list, dist_type){
+select_posterior_graph = function(Adjacency_matrix_list, dist_type = 'shd', dist_fun = NULL, burn_in_frac = 0.75){
   num_covariates = sqrt(ncol(Adjacency_matrix_list))
   num_iter = nrow(Adjacency_matrix_list)
+  p = sqrt(ncol(Adjacency_matrix_list))
 
-  if(dist_type == 'shd'){
+  keep_inds = seq(floor(burn_in_frac * num_iter), num_iter)
+  A_keep = Adjacency_matrix_list[keep_inds, , drop = FALSE]
 
-    Adjacency_matrix_75 = Adjacency_matrix_list[(0.75*num_iter):num_iter,]
-    each_graph_structure = rep(0,nrow(Adjacency_matrix_75))
-    for(i in 1:nrow(Adjacency_matrix_75)){
-      each_graph_structure[i] = paste(Adjacency_matrix_75[i,], collapse=',')
-    }
+  structure_strings = apply(A_keep, 1, paste, collapse = ",")
+  unique_strings = unique(structure_strings)
 
-    unique_graph_structures = unique(each_graph_structure)
+  tab = table(factor(structure_strings, levels = unique_strings))
+  weights = as.numeric(tab)
 
-
-    tab = table(factor(each_graph_structure, levels = unique_graph_structures))
-
-    possible_pairs = combn(1:length(unique_graph_structures),2)
-
-    unique_graph_structures_mat = matrix(0,length(unique_graph_structures),ncol(Adjacency_matrix_75))
+  unique_graphs = lapply(unique_strings, function(s) {
+    vec = as.numeric(strsplit(s, ",")[[1]])
+    matrix(vec, p, p)
+  })
 
 
-    for(i in 1:length(unique_graph_structures)){
-      unique_graph_structures_mat[i,] = as.numeric(strsplit(unique_graph_structures[i][1],',')[[1]])
-    }
-
-    shd_vec = rep(0,ncol(possible_pairs))
-
-    structure_matrix = matrix(0, num_covariates, num_covariates)
-
-    for(i in 1:ncol(possible_pairs)){
-      current_graph_pairs = t(possible_pairs)[i,]
-
-      graph_1_vec = unique_graph_structures_mat[current_graph_pairs[1],]
-      structure_matrix[] = graph_1_vec
-      #graph_1 = matrix(graph_1_vec,num_covariates,num_covariates)
-      graph_1 = as(structure_matrix, "graphNEL")
-
-      graph_2_vec = unique_graph_structures_mat[current_graph_pairs[2],]
-      structure_matrix[] = graph_2_vec
-      #graph_2 = matrix(graph_2_vec,num_covariates,num_covariates)
-      graph_2 = as(structure_matrix, "graphNEL")
-
-      shd_vec[i] = pcalg::shd(graph_1,graph_2)
-    }
-
-    shd_per_unique = rep(0, length(unique_graph_structures))
-
-
-    for(i1 in 1:length(unique_graph_structures)){
-
-      sum_portion_1 = sum(shd_vec[which(t(possible_pairs)[,1]==i1)]*tab[t(possible_pairs)[which(t(possible_pairs)[,1]==i1),2]])
-
-      sum_portion_2 = sum(shd_vec[which(t(possible_pairs)[,2]==i1)]*tab[t(possible_pairs)[which(t(possible_pairs)[,2]==i1),1]])
-
-      shd_per_unique[i1] = sum_portion_1 + sum_portion_2
-    }
-
-    best_adjacency_mat = matrix(unique_graph_structures_mat[which.min(shd_per_unique),],num_covariates,num_covariates)
-  } else if(dist_type == 'sid'){
-    Adjacency_matrix_75 = Adjacency_matrix_list[(0.75*num_iter):num_iter,]
-    each_graph_structure = rep(0,nrow(Adjacency_matrix_75))
-    for(i in 1:nrow(Adjacency_matrix_75)){
-      each_graph_structure[i] = paste(Adjacency_matrix_75[i,], collapse=',')
-    }
-
-    unique_graph_structures = unique(each_graph_structure)
-
-    tab = table(factor(each_graph_structure, levels = unique_graph_structures))
-
-    possible_pairs = combn(1:length(unique_graph_structures),2)
-
-    unique_graph_structures_mat = matrix(0,length(unique_graph_structures),ncol(Adjacency_matrix_75))
-
-    structure_matrix = matrix(0, num_covariates, num_covariates)
-
-    for(i in 1:length(unique_graph_structures)){
-      graph_structure = as.numeric(strsplit(unique_graph_structures[i][1],',')[[1]])
-      structure_matrix[] = graph_structure
-      if(gRbase::is.DAG(structure_matrix)){
-        unique_graph_structures_mat[i,] = as.numeric(strsplit(unique_graph_structures[i][1],',')[[1]])
-      } else{
-        return('Graph structure needs to be DAG')
+  internal_dist = switch(
+    dist_type,
+    "shd" = function(A, B) {
+      g1 <- as(A, "graphNEL")
+      g2 <- as(B, "graphNEL")
+      pcalg::shd(g1, g2)
+    },
+    "sid" = function(A, B) {
+      # SID requires DAGs
+      if (!gRbase::is.DAG(A) || !gRbase::is.DAG(B)) {
+        stop("SID distance requires all graphs to be DAGs.")
       }
+      SID::structIntervDist(A, B)$sid
+    },
+    "forb" = function(A, B) {
+      base::norm(A - B, type = "F")
+    },
+    "custom" = {
+      if (is.null(dist_fun)) {
+        stop("dist_type = 'custom' requires a user-supplied dist_fun(A, B).")
+      }
+      dist_fun
     }
+  )
 
-    sid_vec = rep(0,ncol(possible_pairs))
+  v = length(unique_graphs)
 
-    for(i in 1:ncol(possible_pairs)){
-      current_graph_pairs = t(possible_pairs)[i,]
+  total_distance = numeric(v)
 
-      graph_1_vec = unique_graph_structures_mat[current_graph_pairs[1],]
-      structure_matrix[] = graph_1_vec
-      #graph_1 = matrix(graph_1_vec,num_covariates,num_covariates)
-      graph_1 = structure_matrix
-
-      graph_2_vec = unique_graph_structures_mat[current_graph_pairs[2],]
-      structure_matrix[] = graph_2_vec
-      #graph_2 = matrix(graph_2_vec,num_covariates,num_covariates)
-      graph_2 = structure_matrix
-
-      sid_result = SID::structIntervDist(graph_1,graph_2)
-
-      sid_vec[i] = sid_result
+  for (i in seq_len(v)) {
+    d_sum = 0
+    for (j in seq_len(v)) {
+      d_ij = internal_dist(unique_graphs[[i]], unique_graphs[[j]])
+      d_sum = d_sum + weights[j] * d_ij
     }
-
-    sid_vec = rep(0,ncol(possible_pairs))
-
-    for(i in 1:ncol(possible_pairs)){
-      current_graph_pairs = t(possible_pairs)[i,]
-
-      graph_1_vec = unique_graph_structures_mat[current_graph_pairs[1],]
-      structure_matrix[] = graph_1_vec
-      #graph_1 = matrix(graph_1_vec,num_covariates,num_covariates)
-      graph_1 = structure_matrix
-
-      graph_2_vec = unique_graph_structures_mat[current_graph_pairs[2],]
-      structure_matrix[] = graph_2_vec
-      #graph_2 = matrix(graph_2_vec,num_covariates,num_covariates)
-      graph_2 = structure_matrix
-
-      sid_result = SID::structIntervDist(graph_1,graph_2)
-
-      sid_vec[i] = sid_result$sid
-    }
-
-    sid_per_unique = rep(0, length(unique_graph_structures))
-
-
-    for(i1 in 1:length(unique_graph_structures)){
-
-      sum_portion_1 = sum(sid_vec[which(t(possible_pairs)[,1]==i1)]*tab[t(possible_pairs)[which(t(possible_pairs)[,1]==i1),2]])
-
-      sum_portion_2 = sum(sid_vec[which(t(possible_pairs)[,2]==i1)]*tab[t(possible_pairs)[which(t(possible_pairs)[,2]==i1),1]])
-
-      sid_per_unique[i1] = sum_portion_1 + sum_portion_2
-    }
-
-    best_adjacency_mat = matrix(unique_graph_structures_mat[which.min(sid_per_unique),],num_covariates,num_covariates)
-  } else if(dist_type == 'forb'){
-    Adjacency_matrix_75 = Adjacency_matrix_list[(0.75*num_iter):num_iter,]
-    each_graph_structure = rep(0,nrow(Adjacency_matrix_75))
-    for(i in 1:nrow(Adjacency_matrix_75)){
-      each_graph_structure[i] = paste(Adjacency_matrix_75[i,], collapse=',')
-    }
-
-    unique_graph_structures = unique(each_graph_structure)
-
-    tab = table(factor(each_graph_structure, levels = unique_graph_structures))
-
-    possible_pairs = combn(1:length(unique_graph_structures),2)
-
-    unique_graph_structures_mat = matrix(0,length(unique_graph_structures),ncol(Adjacency_matrix_75))
-
-    structure_matrix = matrix(0, num_covariates, num_covariates)
-
-    for(i in 1:length(unique_graph_structures)){
-      unique_graph_structures_mat[i,] = as.numeric(strsplit(unique_graph_structures[i][1],',')[[1]])
-    }
-
-    forb_vec = rep(0,ncol(possible_pairs))
-
-    structure_matrix = matrix(0, num_covariates, num_covariates)
-
-    for(i in 1:ncol(possible_pairs)){
-      current_graph_pairs = t(possible_pairs)[i,]
-
-      graph_1_vec = unique_graph_structures_mat[current_graph_pairs[1],]
-      structure_matrix[] = graph_1_vec
-      #graph_1 = matrix(graph_1_vec,num_covariates,num_covariates)
-      graph_1 = structure_matrix
-
-      graph_2_vec = unique_graph_structures_mat[current_graph_pairs[2],]
-      structure_matrix[] = graph_2_vec
-      #graph_2 = matrix(graph_2_vec,num_covariates,num_covariates)
-      graph_2 = structure_matrix
-
-      forb_vec[i] = norm(graph_1 - graph_2, type = "F")
-    }
-
-    forb_per_unique = rep(0, length(unique_graph_structures))
-
-
-    for(i1 in 1:length(unique_graph_structures)){
-
-      sum_portion_1 = sum(forb_vec[which(t(possible_pairs)[,1]==i1)]*tab[t(possible_pairs)[which(t(possible_pairs)[,1]==i1),2]])
-
-      sum_portion_2 = sum(forb_vec[which(t(possible_pairs)[,2]==i1)]*tab[t(possible_pairs)[which(t(possible_pairs)[,2]==i1),1]])
-
-      forb_per_unique[i1] = sum_portion_1 + sum_portion_2
-    }
-
-    best_adjacency_mat = matrix(unique_graph_structures_mat[which.min(forb_per_unique),],num_covariates,num_covariates)
+    total_distance[i] = d_sum
   }
-  return(best_adjacency_mat)
+
+  best_index = which.min(total_distance)
+  best_adjacency_matrix= unique_graphs[[best_index]]
+
+
+  return(best_adjacency_matrix)
 }

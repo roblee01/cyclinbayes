@@ -4,11 +4,23 @@
 \alias{select_posterior_graph}
 \title{Generate summary based on}
 \usage{
-select_posterior_graph(Adjacency_matrix_list, dist_type)
+select_posterior_graph(
+  Adjacency_matrix_list,
+  dist_type = "shd",
+  dist_fun = NULL,
+  burn_in_frac = 0.75
+)
 }
 \arguments{
-\item{dist_type}{Type of distance to use when selecting the medoid (e.g., \code{"shd"}, \code{"sid"},
-\code{"forb"}).}
+\item{dist_type}{Character string specifying the distance metric.
+One of \code{"shd"}, \code{"sid"}, \code{"forb"}, or \code{"custom"}.}
+
+\item{dist_fun}{Optional user-supplied distance function used when
+\code{dist_type = "custom"}. Must have signature \code{dist_fun(A, B)},
+where \code{A} and \code{B} are \eqn{p \times p} adjacency matrices and
+return a non negative scalar distance.}
+
+\item{burn_in_frac}{Fraction of iterations to discard as burn in (default 0.75).}
 
 \item{posterior_adjacency_matrices}{A matrix of dimension \code{num_iter × (p*p)} where each row is a flattened adjacency matrix sampled during the posterior (0/1 entries).}
 }
