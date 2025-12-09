@@ -441,7 +441,6 @@ To obtain a representative estimate of the graph structure, we again use the fun
 ```{r,warning=FALSE, message=FALSE, error = TRUE}
 # SID is shown for completeness, it applies only when all posterior graphs are DAGs. If any sampled graph contains a cycle, SID-based selection will produce an error.
 Adjacency_matrix_sid = select_posterior_graph(Adjacency_matrix_list, dist_type = 'sid')
-Adjacency_matrix_sid
 ```
 
 ```{r}

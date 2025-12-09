@@ -79,8 +79,14 @@ select_posterior_graph = function(Adjacency_matrix_list, dist_type = 'shd', dist
   num_iter = nrow(Adjacency_matrix_list)
   p = sqrt(ncol(Adjacency_matrix_list))
 
-  keep_inds = seq(floor(burn_in_frac * num_iter), num_iter)
+
+  start = floor(burn_in_frac * num_iter) + 1L
+  keep_inds = start:num_iter
   A_keep = Adjacency_matrix_list[keep_inds, , drop = FALSE]
+
+
+
+
 
   structure_strings = apply(A_keep, 1, paste, collapse = ",")
   unique_strings = unique(structure_strings)
@@ -93,47 +99,57 @@ select_posterior_graph = function(Adjacency_matrix_list, dist_type = 'shd', dist
     matrix(vec, p, p)
   })
 
-
-  internal_dist = switch(
-    dist_type,
-    "shd" = function(A, B) {
-      g1 <- as(A, "graphNEL")
-      g2 <- as(B, "graphNEL")
-      pcalg::shd(g1, g2)
-    },
-    "sid" = function(A, B) {
-      # SID requires DAGs
-      if (!gRbase::is.DAG(A) || !gRbase::is.DAG(B)) {
-        stop("SID distance requires all graphs to be DAGs.")
-      }
-      SID::structIntervDist(A, B)$sid
-    },
-    "forb" = function(A, B) {
-      base::norm(A - B, type = "F")
-    },
-    "custom" = {
-      if (is.null(dist_fun)) {
-        stop("dist_type = 'custom' requires a user-supplied dist_fun(A, B).")
-      }
-      dist_fun
-    }
-  )
-
   v = length(unique_graphs)
 
-  total_distance = numeric(v)
+  D = matrix(0, nrow = v, ncol = v)
 
-  for (i in seq_len(v)) {
-    d_sum = 0
-    for (j in seq_len(v)) {
-      d_ij = internal_dist(unique_graphs[[i]], unique_graphs[[j]])
-      d_sum = d_sum + weights[j] * d_ij
+  if(dist_type == 'shd'){
+    graph_list =  lapply(unique_graphs, function(A) as(A, "graphNEL"))
+
+    for (i in seq_len(v - 1L)) {
+      gi = graph_list[[i]]
+      for (j in (i + 1L):v) {
+        d_ij = pcalg::shd(gi, graph_list[[j]])
+        D[i, j] = d_ij
+        D[j, i] = d_ij
+      }
     }
-    total_distance[i] = d_sum
+  } else if(dist_type == 'sid'){
+    is_dag = vapply(unique_graphs, gRbase::is.DAG, logical(1L))
+    if (!all(is_dag)) {
+      stop("SID distance requires all graphs to be DAGs.")
+    }
+
+    for (i in seq_len(v - 1L)) {
+      Ai <- unique_graphs[[i]]
+      for (j in (i + 1L):v) {
+        d_ij <- SID::structIntervDist(Ai, unique_graphs[[j]])$sid
+        D[i, j] <- d_ij
+        D[j, i] <- d_ij
+      }
+    }
+  } else if (dist_type == "custom") {
+    if (is.null(dist_fun)) {
+      stop("dist_type = 'custom' requires a user-supplied dist_fun(A, B).")
+    }
+
+    for (i in seq_len(v - 1L)) {
+      Ai <- unique_graphs[[i]]
+      for (j in (i + 1L):v) {
+        d_ij <- dist_fun(Ai, unique_graphs[[j]])
+        D[i, j] <- d_ij
+        D[j, i] <- d_ij
+      }
+    }
+  } else {
+    stop("Unknown dist_type: ", dist_type)
   }
 
+  total_distance = as.vector(D %*% weights)
   best_index = which.min(total_distance)
-  best_adjacency_matrix= unique_graphs[[best_index]]
+
+  best_adjacency_matrix = unique_graphs[[best_index]]
+  return(best_adjacency_matrix)
 
 
   return(best_adjacency_matrix)
