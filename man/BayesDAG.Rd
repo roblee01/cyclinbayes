@@ -72,7 +72,7 @@ set.seed(21)
 N = 300 # sample size
 num_covariates = 10 # number of variables (p)
 M = 2 # number of Gaussian mixture components
-num_iter = 10000 # number of MCMC iterations
+num_iter = 5000 # number of MCMC iterations
 
 
 # Generate Synthetic DAG Data

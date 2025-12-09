@@ -234,7 +234,7 @@ double log_integral_result_calculator_cpp(arma::mat Adjacency_matrix_enter, arma
   }
 }
 
-arma::vec Metropolis_hastings_portions_cpp(arma::mat data_matrix, arma::mat Adjacency_matrix_enter, arma::mat Causal_effect_matrix_enter, arma::mat Z_matrix_enter, arma::mat mu_mat, arma::mat tao_mat, double N, double M, double gamma_1, double gamma_result){
+arma::vec Metropolis_hastings_portions_original_cpp(arma::mat data_matrix, arma::mat Adjacency_matrix_enter, arma::mat Causal_effect_matrix_enter, arma::mat Z_matrix_enter, arma::mat mu_mat, arma::mat tao_mat, double N, double M, double gamma_1, double gamma_result){
   arma::vec final_metropolis_vec = arma::zeros<arma::vec>(3);
 
   arma::mat I = arma::eye<arma::mat>(Causal_effect_matrix_enter.n_rows, Causal_effect_matrix_enter.n_cols);
@@ -299,7 +299,74 @@ arma::vec Metropolis_hastings_portions_cpp(arma::mat data_matrix, arma::mat Adja
   return final_metropolis_vec;
 }
 
+arma::vec Metropolis_hastings_portions_cpp(arma::mat data_matrix, arma::mat Adjacency_matrix_enter, arma::mat Causal_effect_matrix_enter, arma::mat Z_matrix_enter, arma::mat mu_mat, arma::mat tao_mat, double N, double M, double gamma_1, double gamma_result){
+  //const arma::uword N = data_matrix.n_rows;
+  const arma::uword p = Causal_effect_matrix_enter.n_cols;
 
+  arma::vec out(3, arma::fill::zeros);
+
+  arma::vec final_metropolis_vec = arma::zeros<arma::vec>(3);
+
+  arma::mat IminusB = arma::eye<arma::mat>(p, p) - Causal_effect_matrix_enter;
+  double log_det_IminusB;
+  double sign;
+  arma::log_det(log_det_IminusB, sign, IminusB);
+
+  const double const_term = -0.5 * p * std::log(2.0 * M);
+
+  arma::vec mu_vec  = arma::vectorise(mu_mat.t());   // length p * M
+  arma::vec tao_vec = arma::vectorise(tao_mat.t());
+
+  arma::vec result_vec(N);
+
+  arma::uvec base_idx = N * arma::regspace<arma::uvec>(0, p - 1);
+
+  for(arma::uword i = 0; i < N; i++){
+    arma::uvec idx = i + base_idx;
+
+    arma::mat Z_assignments_sample = Z_matrix_enter.rows(idx);
+    arma::vec Z_vec = arma::vectorise(Z_assignments_sample.t());
+    arma::uvec which1 = arma::find(Z_vec == 1);
+
+
+    arma::vec mu_i  = mu_vec.elem(which1);   // length p
+    arma::vec tao_i = tao_vec.elem(which1);  // length p
+
+    arma::colvec y_i = data_matrix.row(i).t();
+    arma::colvec eps_i = IminusB * y_i;
+
+    arma::vec diff = eps_i - mu_i;
+    double quad     = arma::sum( (diff % diff) / tao_i );
+    double log_tau  = arma::sum( arma::log(tao_i) );
+
+    result_vec[i] = const_term
+    - 0.5 * (log_tau + quad)
+      + log_det_IminusB;
+  }
+
+  double first_part = arma::accu(result_vec);
+  out[0] = first_part;
+
+
+  arma::uvec nz_idx = arma::find(Causal_effect_matrix_enter != 0.0);
+  arma::vec  B_nz   = Causal_effect_matrix_enter.elem(nz_idx);
+  out[1] = arma::sum(fast_dnorm_log_vec(B_nz, 0.0, std::sqrt(gamma_1)));
+
+  arma::vec adj_all = arma::vectorise(Adjacency_matrix_enter);  // contains 0s and 1s
+  arma::uword count1 = arma::accu(adj_all);
+  arma::uword total = adj_all.n_elem;
+  arma::uword count0 = total - count1;
+
+  // 4) log‐pmf sum for Bernoulli(gamma_result):
+  //    count1 * log(p) + count0 * log(1-p)
+  double lp = std::log(gamma_result);
+  double lq = std::log(1.0 - gamma_result);
+
+  double third_part = count1 * lp + count0 * lq;
+  out[2] = third_part;
+
+  return out;
+}
 
 
 // [[Rcpp::export]]

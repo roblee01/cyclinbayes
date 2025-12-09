@@ -107,7 +107,7 @@ set.seed(21)
 N = 300    # sample size
 num_covariates = 10     # number of features
 M = 2      # number of mixture components
-num_iter = 10000  # number of MCMC iterations
+num_iter = 5000  # number of MCMC iterations
 
 #######################################
 # Hyperparameter setup
@@ -246,7 +246,7 @@ return a non negative scalar distance.
 ``` r
 #############################################
 # Best Graph Structure determined through shd
-############################################
+#############################################
 Adjacency_matrix_shd = select_posterior_graph(Adjacency_matrix_list, dist_type = 'shd')
 Adjacency_matrix_shd
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
@@ -366,10 +366,10 @@ uncertainty quantification for $\gamma$ at a 95% level.
 gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
 gamma_posterior_summary$credible_interval
 #>       2.5%      97.5% 
-#> 0.05173893 0.18084576
+#> 0.05348228 0.18098877
 gamma_posterior_summary$hpd_interval[,1]
 #>      lower      upper 
-#> 0.04596706 0.17267475
+#> 0.04987347 0.17585404
 ```
 
 Matrix valued parameters, such as the causal effect matrix $B$ or the
@@ -469,7 +469,7 @@ library(cyclinbayes)
 N = 250 # Sample size for the test data
 num_covariates = 7 # Number of features for test data
 M = 2 # Number of finite clusters for mixed normal in likelihood
-num_iter = 10000 # Number of iterations MCMC runs
+num_iter = 5000 # Number of iterations MCMC runs
 
 #######################################
 # Hyperparameter setup
@@ -680,12 +680,12 @@ gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
 # Print equal tailed credible interval
 gamma_posterior_summary$credible_interval
 #>      2.5%     97.5% 
-#> 0.1234888 0.9263258
+#> 0.1253851 0.9621042
 
 # Print HPD interval (first column corresponds to gamma)
 gamma_posterior_summary$hpd_interval[,1]
 #>     lower     upper 
-#> 0.0972529 0.8496317
+#> 0.1099916 0.9437803
 ```
 
 For the matrix valued outputs, similar to the acyclic case, we can
