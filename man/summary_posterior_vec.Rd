@@ -31,7 +31,7 @@ Computes basic posterior summaries for a univariate parameter, including the pos
 N = 300
 num_covariates = 10
 M = 2
-num_iter = 10000
+num_iter = 5000
 
 
 example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)

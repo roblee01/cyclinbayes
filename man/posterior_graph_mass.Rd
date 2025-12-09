@@ -21,3 +21,57 @@ This function computes the posterior mass (relative frequency) of a specified gr
 sampled posterior adjacency matrices. The input graph is converted into an adjacency matrix vector, and function
 counts how often all edges appear in sampled posterior graph.
 }
+\examples{
+
+# Run BayessDAG simulated example
+
+N = 300
+num_covariates = 10
+M = 2
+num_iter = 5000
+
+
+example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
+
+data_matrix = example_list$data_matrix
+Adjacency_matrix_true = example_list$Adjacency_matrix_true
+
+params = list(
+a_mu = 0,
+b_mu = 2,
+a_gamma = 0.5,
+b_gamma = 0.5,
+a_gamma_1 = 2,
+b_gamma_1 = 1,
+a_tao = 2,
+b_tao = 1,
+a_og_tao = 0.01,
+b_og_tao = 0.01,
+alpha = 1
+)
+
+
+results_lists = BayesDAG(
+data_matrix,
+params$a_mu,
+params$b_mu,
+params$a_gamma,
+params$b_gamma,
+params$a_tao,
+params$b_tao,
+params$a_og_tao,
+params$b_og_tao,
+params$a_gamma_1,
+params$b_gamma_1,
+params$alpha,
+M,
+num_iter
+) # Runs the Acyclic algorithm
+
+
+# Extract posterior graph structures
+Adjacency_matrix_list = results_list$Adjacency_matrix_list
+
+true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
+posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
+}

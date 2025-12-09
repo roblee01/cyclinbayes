@@ -62,7 +62,7 @@ set.seed(21)
 N = 250 # Sample size for the test data
 num_covariates = 7 # Number of features for test data
 M = 2 # Number of finite clusters for mixed normal in likelihood
-num_iter = 10000 # Number of iterations MCMC runs
+num_iter = 5000 # Number of iterations MCMC runs
 
 
 # Generate Synthetic DCG Data

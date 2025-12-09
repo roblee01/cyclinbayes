@@ -20,7 +20,7 @@
 #' N = 300
 #' num_covariates = 10
 #' M = 2
-#' num_iter = 10000
+#' num_iter = 5000
 #'
 #'
 #' example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
@@ -70,6 +70,13 @@
 #' Adjacency_matrix
 #'
 #' Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'forb') # Best graph structure using forb
+#' Adjacency_matrix
+#'
+#' custom_edge_mismatch = function(A, B) {
+#' return(sum(abs(A - B)))
+#' }
+#'
+#' Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
 #' Adjacency_matrix
 
 
