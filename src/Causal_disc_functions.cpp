@@ -374,6 +374,7 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a
   double num_features = data_matrix.n_cols;
   double N = data_matrix.n_rows;
 
+  arma::vec log_likelihood_list = arma::zeros<arma::vec>(num_iter);
   arma::vec gamma_1_list = arma::zeros<arma::vec>(num_iter);
   arma::vec gamma_list = arma::zeros<arma::vec>(num_iter);
   arma::mat Adjacency_matrix_list = arma::zeros<arma::mat>(num_iter, num_features*num_features);
@@ -705,6 +706,9 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a
     //Rcout << vectorized_mu.n_elem <<std::endl;
     //Rcout << mu_matrix_list.n_cols <<std::endl;
     pi_matrix_list.row(i-1) = vectorized_pi;
+
+    arma::vec log_parts = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_effect_matrix, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
+    log_likelihood_list(i-1) = log_parts[0];
   }
 
   arma::rowvec Adjacency_matrix_means = arma::mean(Adjacency_matrix_list.rows(0.75*num_iter-1,num_iter-1),0);
@@ -717,7 +721,8 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a
     Named("gamma_1_list") = gamma_1_list,
     Named("mu_matrix_list") =  mu_matrix_list,
     Named("tao_matrix_list") = tao_matrix_list,
-    Named("pi_matrix_list") = pi_matrix_list
+    Named("pi_matrix_list") = pi_matrix_list,
+    Named("log_likelihood_list") = log_likelihood_list
   );
 }
 
@@ -726,6 +731,7 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
   double num_features = data_matrix.n_cols;
   double N = data_matrix.n_rows;
 
+  arma::vec log_likelihood_list = arma::zeros<arma::vec>(num_iter);
   arma::vec gamma_1_list = arma::zeros<arma::vec>(num_iter);
   arma::vec gamma_list = arma::zeros<arma::vec>(num_iter);
   arma::mat Adjacency_matrix_list = arma::zeros<arma::mat>(num_iter, num_features*num_features);
@@ -811,11 +817,13 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
     double log_q_prop;
     double log_q_prev;
 
+    arma::vec log_current_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_effect_matrix, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
+    double log_current = arma::sum(log_current_vec);
+    arma::uvec all_indices = arma::regspace<arma::uvec>(0, num_features - 1);
+
 
     for(arma::uword i6 = 0; i6 < num_features; i6++){
 
-
-      arma::uvec all_indices = arma::regspace<arma::uvec>(0, num_features - 1);
       //Rcout << "all_indices: " << all_indices << std::endl;
 
       arma::uvec remaining_index = all_indices.elem(arma::find(all_indices != (i6)));
@@ -853,11 +861,11 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
 
         if(arma::max(mod_eigenvalues) < 1){
           arma::vec log_prop_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_prop, Causal_prop, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
-          arma::vec log_current_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_effect_matrix, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
+          //arma::vec log_current_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_effect_matrix, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
 
 
           double log_proposal = arma::sum(log_prop_vec);
-          double log_current = arma::sum(log_current_vec);
+          //double log_current = arma::sum(log_current_vec);
 
 
           double log_r = log_proposal - log_current + log_q_prop - log_q_prev;
@@ -871,6 +879,8 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
           if(sampled_val < bool_vec.min()){
             Causal_effect_matrix = Causal_prop;
             Adjacency_matrix = Adjacency_prop;
+            log_current = log_proposal;
+            log_current_vec = log_prop_vec;
           }
         }
       }
@@ -900,7 +910,7 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
 
           if(arma::max(mod_eigenvalues) < 1){
             arma::vec log_prop_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_prop, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
-            arma::vec log_current_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_effect_matrix, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
+            //arma::vec log_current_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_effect_matrix, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
 
 
             double log_proposal = log_prop_vec(0) + log_prop_vec(1);
@@ -920,6 +930,8 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
 
             if(sampled_val < bool_vec.min()){
               Causal_effect_matrix(i6,present_rows(j6)) = Causal_prop(i6,present_rows(j6));
+              log_current_vec = log_prop_vec;
+              //log_current = log_proposal;
             }
           }
         }
@@ -1058,6 +1070,9 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
     //Rcout << vectorized_mu.n_elem <<std::endl;
     //Rcout << mu_matrix_list.n_cols <<std::endl;
     pi_matrix_list.row(i-1) = vectorized_pi;
+
+    arma::vec log_parts = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_effect_matrix, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
+    log_likelihood_list(i-1) = log_parts[0];
   }
 
   arma::rowvec Adjacency_matrix_means = arma::mean(Adjacency_matrix_list.rows(0.75*num_iter-1,num_iter-1),0);
@@ -1070,7 +1085,8 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
     Named("gamma_1_list") = gamma_1_list,
     Named("mu_matrix_list") =  mu_matrix_list,
     Named("tao_matrix_list") = tao_matrix_list,
-    Named("pi_matrix_list") = pi_matrix_list
+    Named("pi_matrix_list") = pi_matrix_list,
+    Named("log_likelihood_list") = log_likelihood_list
   );
 }
 

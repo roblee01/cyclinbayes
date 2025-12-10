@@ -113,4 +113,5 @@ gamma_1_list = results_lists$gamma_1_list
 mu_matrix_list = results_lists$mu_matrix_list
 tao_matrix_list = results_lists$tao_matrix_list
 pi_matrix_list = results_lists$pi_matrix_list
+log_likelihood_list = results_lists$log_likelihood_list
 }

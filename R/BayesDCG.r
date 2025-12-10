@@ -83,6 +83,7 @@
 #' mu_matrix_list = results_lists$mu_matrix_list
 #' tao_matrix_list = results_lists$tao_matrix_list
 #' pi_matrix_list = results_lists$pi_matrix_list
+#' log_likelihood_list = results_lists$log_likelihood_list
 
 
 BayesDCG <- function(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter) {

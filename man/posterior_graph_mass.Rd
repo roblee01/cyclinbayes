@@ -33,6 +33,7 @@ num_iter = 5000
 
 example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
 
+
 data_matrix = example_list$data_matrix
 Adjacency_matrix_true = example_list$Adjacency_matrix_true
 
@@ -71,6 +72,9 @@ num_iter
 
 # Extract posterior graph structures
 Adjacency_matrix_list = results_list$Adjacency_matrix_list
+
+
+# Compute the posterior mass assigned to true graph
 
 true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
 posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
