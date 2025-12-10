@@ -175,6 +175,7 @@ results_lists = BayesDAG(
 # Extract key posterior summaries
 #######################################
 Adjacency_matrix_means = results_lists$Adjacency_matrix_means 
+log_likelihood_list = results_lists$log_likelihood_list
 Adjacency_matrix_list = results_lists$Adjacency_matrix_list 
 Causal_effect_matrix_list = results_lists$Causal_effect_matrix_list
 gamma_list = results_lists$gamma_list
@@ -245,14 +246,13 @@ posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
 
 Since the value is at 1, this indicates that the sampler visited the true graph structure repeatedly on every possible posterior graph structure. 
 
-Many parameters in cyclinbayes are recorded as single scalar values at each MCMC iteration, resulting in a posterior sample vector for each such quantity. As an illustration, we examine the global edge inclusion probability $\gamma$. Below we plot its posterior trace to assess mixing and verify that the sampler explores the parameter space adequately.
+To assess whether the sampler has mixed well and is exploring the parameter space adequately, we inspect the trace plot for the log likelihood. The log likelihood trace is especially useful, as it reflects convergence of the entire parameter configuration rather than a single component. Stable behavior in both the parameter traces and the log likelihood provides strong evidence that the chain has reached stationarity. The trace plot for the log likelihood is plotted below:
 
 ```{r}
-plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'Gamma Values')
+plot(log_likelihood_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'log likelihood values')
 ```
 
-To summarize such scalar (low dimensional) hyperparameters, the uncertainty quantification is handled by the function `summary_posterior_vec()`, which takes vector of posterior draws and returns both equal tailed credible intervals and
-highest posterior density (HPD) intervals at a user specified level. Below we do the uncertainty quantification for $\gamma$ at a 95% level.
+As seen overall, the log_likelihoods stay in the same general area indicating the sampler has reached a stationary regime, indicating posterior summaries for the other parameters are from a well converged chain. To summarize scalar (low dimensional) hyperparameters, such as global edge inclusion probability $\gamma$, the uncertainty quantification is handled by the function `summary_posterior_vec()`, which takes vector of posterior draws and returns both equal tailed credible intervals and highest posterior density (HPD) intervals at a user specified level. Below we do the uncertainty quantification for $\gamma$ at a 95% level.
 
 ```{r}
 gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
@@ -427,6 +427,7 @@ results_list = BayesDCG(
 # Extract posterior outputs
 #######################################
 Adjacency_matrix_means = results_list$Adjacency_matrix_means 
+log_likelihood_list = results_list$log_likelihood_list
 Adjacency_matrix_list = results_list$Adjacency_matrix_list 
 Causal_effect_matrix_list = results_list$Causal_effect_matrix_list
 gamma_list = results_list$gamma_list
@@ -470,13 +471,14 @@ posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
 
 Since the value is at 1, this indicates that the sampler visited the true graph structure repeatedly on every possible posterior graph structure.
 
-Similarly to acyclic case, we examine individual parameters similarly. We consider the edge inclusion probability $\gamma$ as an example. Below we plot the MCMC samples for $\gamma$ (after the first 75% of iterations) to assess mixing and posterior behavior:
+Similar to the acyclic case, to check whether the sampler has mixed well and is exploring the parameter space well, we again inspect the log likelihood. Below we plot the log likelihood for each iteration to assess mixing and posterior behavior:
 
 ```{r}
-plot(gamma_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'gamma value')
+plot(log_likelihood_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'log likelihood values')
 ```
+As seen overall, the log_likelihoods stay in the same general area indicating the sampler has reached a stationary regime, indicating posterior summaries for the other parameters are from a well converged chain. 
 
-We again summarize $\gamma$ parameter using `summary_posterior_vec()`, which returns both the 95% credible interval and the highest posterior density (HPD) interval:
+Similarly we can summarize low dimensional scalar parameters like $\gamma$ using `summary_posterior_vec()`, which returns both the 95% credible interval and the highest posterior density (HPD) interval:
 
 ```{r}
 # 95% credible interval + HPD interval
