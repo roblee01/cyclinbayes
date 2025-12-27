@@ -47,6 +47,11 @@ Default value is 0.01.}
 \item{b_og_tao}{Scale parameter of the proposal distribution used when updating the variance parameters \eqn{\tau} associated with adjacency matrix entries in the MCMC algorithm.
 Default value is 0.01.}
 
+\item{a_gamma_1}{Shape parameter of the inverse gamma prior on the slab variance \eqn{\gamma_1} in the conditional spike and slab prior \eqn{B_{ij}\mid E_{ij},
+\gamma_1 \sim (1-E_{ij})\delta_0 + E_{ij}N(0,\gamma_1)}. Default value is 2.}
+
+\item{b_gamma_1}{Scale parameter of the inverse gamma prior on \eqn{\gamma_1}. Default value is 1.}
+
 \item{alpha}{Concentration parameter of the Dirichlet prior on the mixture weights for the normal mixture error distribution (controls how evenly the mixture components are used).
 Default value is 1}
 
