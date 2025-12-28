@@ -784,7 +784,6 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
   arma::uvec all_indices = arma::regspace<arma::uvec>(0, num_features - 1);
 
 
-
   for(int i = 1; i <= num_iter; i++){
 
     // gamma update
@@ -814,8 +813,8 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
     }
     //arma::uvec all_indices = arma::regspace<arma::uvec>(0, num_features - 1);
 
-    double log_q_prop;
-    double log_q_prev;
+    double log_q_fwd = 0;
+    double log_q_rev = 0;
 
     arma::vec log_current_vec = Metropolis_hastings_portions_cpp(data_matrix, Adjacency_matrix, Causal_effect_matrix, Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
     double log_current = arma::sum(log_current_vec);
@@ -833,6 +832,9 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
       //Rcout << "entries_order: " << entries_order << std::endl;
 
       for(arma::uword j6 = 0; j6 < entries_order.n_elem; j6++){
+        log_q_fwd = 0;
+        log_q_rev = 0;
+
         arma::mat Causal_prop = Causal_effect_matrix;
         arma::mat Adjacency_prop = Adjacency_matrix;
 
@@ -844,16 +846,15 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
 
           Causal_prop(i6,current_column) = proposal_coef;
 
-          log_q_prop = fast_dnorm_log(Causal_effect_matrix(i6,current_column), proposal_mean_add, proposal_sd_add);
+          log_q_fwd = fast_dnorm_log(proposal_coef, proposal_mean_add, proposal_sd_add);
           //Rcout << "log_q_prop: " << log_q_prop << std::endl;
-          log_q_prev = 0;
         } else{
           Adjacency_prop(i6,current_column) = 0;
           double proposal_coef = 0;
+          double b_old = Causal_effect_matrix(i6,current_column);
           Causal_prop(i6,current_column) = proposal_coef;
 
-          log_q_prop = 0;
-          log_q_prev = fast_dnorm_log(proposal_coef, proposal_mean_add, proposal_sd_add);
+          log_q_rev = fast_dnorm_log(b_old, proposal_mean_add, proposal_sd_add);
         }
 
         arma::cx_vec eigenvalues = arma::eig_gen(Causal_prop);
@@ -868,7 +869,7 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
           //double log_current = arma::sum(log_current_vec);
 
 
-          double log_r = log_proposal - log_current + log_q_prop - log_q_prev;
+          double log_r = log_proposal - log_current + log_q_rev - log_q_fwd;
           double prob = std::exp(log_r);
           arma::rowvec bool_vec = {1, prob};
 
