@@ -70,9 +70,9 @@
 #' # Compute the posterior mass assigned to true graph
 #'
 #' true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
-#' posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
+#' posterior_network_motif(true_graph_structure, Adjacency_matrix_list)
 
-posterior_graph_mass = function(graph_structure, posterior_graph_structures){
+posterior_network_motif = function(graph_structure, posterior_graph_structures){
   count = 0
   A = as.matrix(as_adjacency_matrix(graph_structure))
   graph_structure_vec = c(A)

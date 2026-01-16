@@ -88,6 +88,8 @@
 
 summary_posterior_matrix = function(posterior_matrix, level, adjacency = FALSE){
 
+  num_iter = nrow(posterior_matrix)
+
   if(adjacency){
     num_iter = nrow(posterior_matrix)
     num_features = sqrt(ncol(posterior_matrix))
@@ -106,7 +108,12 @@ summary_posterior_matrix = function(posterior_matrix, level, adjacency = FALSE){
   }
 
   ci_matrix = matrix(0,ncol(posterior_matrix),3)
-  posterior_75 = posterior_matrix[(0.75*num_iter):num_iter,]
+
+  if(ncol(posterior_matrix) == 1){
+    posterior_75 = as.matrix(posterior_matrix[(0.75*num_iter):num_iter,])
+  } else{
+    posterior_75 = posterior_matrix[(0.75*num_iter):num_iter,]
+  }
 
   hpd_matrix = HDInterval::hdi(posterior_75, credMass = level)
 

@@ -63,25 +63,25 @@
 #'
 #' Adjacency_matrix_means = results_lists$Adjacency_matrix_means
 #'
-#' Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd') # Best graph structure using shd
+#' Adjacency_matrix = point_est_graph(Adjacency_matrix_list,dist_type = 'shd') # Best graph structure using shd
 #' Adjacency_matrix
 #'
-#' Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'sid') # Best graph structure using sid
+#' Adjacency_matrix = point_est_graph(Adjacency_matrix_list,dist_type = 'sid') # Best graph structure using sid
 #' Adjacency_matrix
 #'
-#' Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list,dist_type = 'forb') # Best graph structure using forb
+#' Adjacency_matrix = point_est_graph(Adjacency_matrix_list,dist_type = 'forb') # Best graph structure using forb
 #' Adjacency_matrix
 #'
 #' custom_edge_mismatch = function(A, B) {
 #' return(sum(abs(A - B)))
 #' }
 #'
-#' Adjacency_matrix = select_posterior_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
+#' Adjacency_matrix = point_est_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
 #' Adjacency_matrix
 
 
 
-select_posterior_graph = function(Adjacency_matrix_list, dist_type = 'shd', dist_fun = NULL, burn_in_frac = 0.75){
+point_est_graph = function(Adjacency_matrix_list, dist_type = 'shd', dist_fun = NULL, burn_in_frac = 0.75){
   num_covariates = sqrt(ncol(Adjacency_matrix_list))
   num_iter = nrow(Adjacency_matrix_list)
   p = sqrt(ncol(Adjacency_matrix_list))
