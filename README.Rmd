@@ -207,7 +207,7 @@ where $A$ and $B$ are $p\times p$ adjacency matrices. The function must return a
 #############################################
 # Best Graph Structure determined through shd
 #############################################
-Adjacency_matrix_shd = select_posterior_graph(Adjacency_matrix_list, dist_type = 'shd')
+Adjacency_matrix_shd = point_est_graph(Adjacency_matrix_list, dist_type = 'shd')
 Adjacency_matrix_shd
 ```
 
@@ -215,7 +215,7 @@ Adjacency_matrix_shd
 ############################################
 # Best Graph Structure determined through sid
 ############################################
-Adjacency_matrix_sid = select_posterior_graph(Adjacency_matrix_list,dist_type = 'sid')
+Adjacency_matrix_sid = point_est_graph(Adjacency_matrix_list,dist_type = 'sid')
 Adjacency_matrix_sid
 ```
 As an example for a custom function, we could count the total number of edge mismatches.
@@ -225,7 +225,7 @@ custom_edge_mismatch = function(A, B) {
   return(sum(abs(A - B)))
 }
 
-Adjacency_matrix_custom = select_posterior_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
+Adjacency_matrix_custom = point_est_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
 Adjacency_matrix_custom
 ```
 
@@ -259,7 +259,6 @@ gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
 gamma_posterior_summary$credible_interval
 gamma_posterior_summary$hpd_interval[,1]
 ```
-
 Matrix valued parameters, such as the causal effect matrix $B$ or the mixture means and variances $(\mu_{ik},\tau_{ik})$, are stored as flattened matrices, where each column corresponds to a specific parameter entry and each row represents one MCMC iteration. These quantities are summarized using `summary_posterior_matrix()`, which computes HPD and equal tailed credible intervals column wise, returning interval estimates for every underlying matrix element.
 
 To illustrate, we examine posterior uncertainty in the causal effect coefficients. The figure below displays the HPD and credible intervals for all nonzero entries of $B$, with the dashed red line indicating the true weight. The credible intervals tightly capture the ground truth values, and the HPD estimates lie close to the reference line, demonstrating that the method recovers both causal strength and graph structure accurately.
@@ -441,18 +440,18 @@ To obtain a representative estimate of the graph structure, we again use the fun
 
 ```{r,warning=FALSE, message=FALSE, error = TRUE}
 # SID is shown for completeness, it applies only when all posterior graphs are DAGs. If any sampled graph contains a cycle, SID-based selection will produce an error.
-Adjacency_matrix_sid = select_posterior_graph(Adjacency_matrix_list, dist_type = 'sid')
+Adjacency_matrix_sid = point_est_graph(Adjacency_matrix_list, dist_type = 'sid')
 ```
 
 ```{r}
-Adjacency_matrix_shd = select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
+Adjacency_matrix_shd = point_est_graph(Adjacency_matrix_list,dist_type = 'shd')
 Adjacency_matrix_shd
 ```
 
 Using the same custom function as the acyclic case, we get following graph structure. 
 
 ```{r}
-Adjacency_matrix_custom = select_posterior_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
+Adjacency_matrix_custom = point_est_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
 Adjacency_matrix_custom
 ```
 

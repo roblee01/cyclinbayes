@@ -248,7 +248,7 @@ return a non negative scalar distance.
 #############################################
 # Best Graph Structure determined through shd
 #############################################
-Adjacency_matrix_shd = select_posterior_graph(Adjacency_matrix_list, dist_type = 'shd')
+Adjacency_matrix_shd = point_est_graph(Adjacency_matrix_list, dist_type = 'shd')
 Adjacency_matrix_shd
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
@@ -267,7 +267,7 @@ Adjacency_matrix_shd
 ############################################
 # Best Graph Structure determined through sid
 ############################################
-Adjacency_matrix_sid = select_posterior_graph(Adjacency_matrix_list,dist_type = 'sid')
+Adjacency_matrix_sid = point_est_graph(Adjacency_matrix_list,dist_type = 'sid')
 Adjacency_matrix_sid
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
@@ -290,7 +290,7 @@ custom_edge_mismatch = function(A, B) {
   return(sum(abs(A - B)))
 }
 
-Adjacency_matrix_custom = select_posterior_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
+Adjacency_matrix_custom = point_est_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
 Adjacency_matrix_custom
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
@@ -336,7 +336,7 @@ mass assigned to the true graph:
 
 ``` r
 true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
-posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
+posterior_network_motif(true_graph_structure, Adjacency_matrix_list)
 #> [1] 1
 ```
 
@@ -590,12 +590,12 @@ supply their own custom functions.
 
 ``` r
 # SID is shown for completeness, it applies only when all posterior graphs are DAGs. If any sampled graph contains a cycle, SID-based selection will produce an error.
-Adjacency_matrix_sid = select_posterior_graph(Adjacency_matrix_list, dist_type = 'sid')
-#> Error in select_posterior_graph(Adjacency_matrix_list, dist_type = "sid"): SID distance requires all graphs to be DAGs.
+Adjacency_matrix_sid = point_est_graph(Adjacency_matrix_list, dist_type = 'sid')
+#> Error in point_est_graph(Adjacency_matrix_list, dist_type = "sid"): SID distance requires all graphs to be DAGs.
 ```
 
 ``` r
-Adjacency_matrix_shd = select_posterior_graph(Adjacency_matrix_list,dist_type = 'shd')
+Adjacency_matrix_shd = point_est_graph(Adjacency_matrix_list,dist_type = 'shd')
 Adjacency_matrix_shd
 #>      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
 #> [1,]    0    0    0    0    0    0    0
@@ -611,7 +611,7 @@ Using the same custom function as the acyclic case, we get following
 graph structure.
 
 ``` r
-Adjacency_matrix_custom = select_posterior_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
+Adjacency_matrix_custom = point_est_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
 Adjacency_matrix_custom
 #>      [,1] [,2] [,3] [,4] [,5] [,6] [,7]
 #> [1,]    0    0    0    0    0    0    0
@@ -646,7 +646,7 @@ candidate DCG, such as the true graph.
 
 ``` r
 true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
-posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
+posterior_network_motif(true_graph_structure, Adjacency_matrix_list)
 #> [1] 1
 ```
 
@@ -680,12 +680,12 @@ gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
 # Print equal tailed credible interval
 gamma_posterior_summary$credible_interval
 #>      2.5%     97.5% 
-#> 0.1253851 0.9621042
+#> 0.1311195 0.6549850
 
 # Print HPD interval (first column corresponds to gamma)
 gamma_posterior_summary$hpd_interval[,1]
 #>     lower     upper 
-#> 0.1099916 0.9437803
+#> 0.1105984 0.5991075
 ```
 
 For the matrix valued outputs, similar to the acyclic case, we can
