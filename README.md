@@ -444,9 +444,9 @@ matrix $I - B$ is invertible and the system remains stable, we constrain
 the spectral radius of the causal effect matrix $B$.
 
 Specifically, we compute $$
-\rho(B) = \max \{ |\lambda| : \lambda \in \mathrm{eig}(B) \},
+$\rho(B) = \max \{ |\lambda| : \lambda \in \mathrm{eig}(B) \}$,
 $$ and if $\rho(B) \ge 0.95$, we rescale the matrix as $$
-B \leftarrow \frac{0.95}{\rho(B)} \, B,
+$B \leftarrow \frac{0.95}{\rho(B)}$ \, B,
 $$ which guarantees that the spectral radius is strictly below $0.95$.
 
 This rescaling step ensures numerical stability of the likelihood while
