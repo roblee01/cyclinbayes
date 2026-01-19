@@ -241,7 +241,7 @@ The function `posterior_graph_mass()` computes the posterior mass (relative freq
 
 ```{r}
 true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
-posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
+posterior_network_motif(true_graph_structure, Adjacency_matrix_list)
 ```
 
 Since the value is at 1, this indicates that the sampler visited the true graph structure repeatedly on every possible posterior graph structure. 
@@ -465,7 +465,7 @@ In addition to choosing the best possible graphs through distance based medoids,
 
 ```{r}
 true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
-posterior_graph_mass(true_graph_structure, Adjacency_matrix_list)
+posterior_network_motif(true_graph_structure, Adjacency_matrix_list)
 ```
 
 Since the value is at 1, this indicates that the sampler visited the true graph structure repeatedly on every possible posterior graph structure.

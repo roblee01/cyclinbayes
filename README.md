@@ -64,8 +64,9 @@ library(igraph)
 ## Acyclic (DAG) Example
 
 Below is a simple example demonstrating how to use the Bayesian LiNGAM
-(DAG) sampler. Let $p$ denote the number of variables and $n$ the sample
-size. We generate error terms from a finite Gaussian mixture model:
+(DAG) sampler. Let $p$ denote the number of variables, $n$ the sample
+size, and $num\_iter$ be the number of iterations of the sampler. We
+generate error terms from a finite Gaussian mixture model:
 
 $$
 \epsilon_i^{(q)} \sim \sum_{k=1}^{M} \pi_{ik} N(\mu_{ik}, \tau_{ik}),
@@ -171,17 +172,24 @@ plot(
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
 With the simulated dataset and prior hyperparameters specified above, we
-now fit the Bayesian LiNGAM model using `BayesDAG()`. The function
-returns posterior samples for:
+fit the Bayesian LiNGAM model using `BayesDAG()`. Each MCMC iteration t
+produces:
 
-- Adjacency matrices
-- Causal effect matrices
-- mixture model parameters
-- global parameters (e.g. $\gamma$, $\gamma_1$)
+- Adjacency matrix $E^{(t)}\in \{0,1\}^{p\times p}$
+- Causal effect matrix $B^{(t)}\in \mathbb{R}^{p\times p}$
+- Mixture parameters for the error model, with component specific means
+  and variances/precisions stored in matrices (e.g.,
+  $\mu^{(t)},\tau^{(t)}\in \mathbb{R}^{p\times M}$, where column $k$
+  corresponds to mixture component $k$).
 
-These outputs allow users to perform full posterior uncertainty
-quantification (edge probabilities, HPD intervals, credible intervals,
-and posterior graph selection).
+For posterior summaries, each iteration’s matrices are flattened
+(vectorized) into a single parameter vector. Concretely, we apply vec(.)
+to stack all entries of $E^{(t)}$, $B^{(t)}$, $\mu^{(t)}$, and
+$\tau^{(t)}$, and stack these vectors over iterations to form a matrix
+of samples where the rows are iterations and columns correspond to fixed
+matrix entries (one column for $B_{ij}$ or $\mu_{ik}$). This makes
+element wise quantities, edge probabilities, HPD/credible intervals, and
+other summaries straightforward to compute.
 
 ``` r
 #######################################
@@ -219,9 +227,9 @@ pi_matrix_list = results_lists$pi_matrix_list
 ```
 
 To obtain a representative estimate of the graph structure, we use the
-function `select_posterior_graph()`, which selects the posterior
-weighted medoid, the graph that minimizes the weight distance to all
-other sampled adjacency matrices. Users may select one of the build in
+function `point_est_graph()`, which selects the posterior weighted
+medoid, the graph that minimizes the weight distance to all other
+sampled adjacency matrices. Users may select one of the build in
 distances or supply their own custom functions. The available distance
 metrics are:
 
@@ -328,7 +336,7 @@ medoids, users may evaluate how often a graph appears in structure
 appears in the posterior samples. This provides posterior support for
 any candidate DAG, such as the true graph.
 
-The function `posterior_graph_mass()` computes the posterior mass
+The function `posterior_network_motif()` computes the posterior mass
 (relative frequency) of a graph by checking whether all its edges are
 present on each of the posterior graph structures. Using the adjacency
 samples from the acyclic example above, we can compute the posterior
@@ -361,42 +369,19 @@ plot(log_likelihood_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterat
 As seen overall, the log_likelihoods stay in the same general area
 indicating the sampler has reached a stationary regime, indicating
 posterior summaries for the other parameters are from a well converged
-chain. To summarize scalar (low dimensional) hyperparameters, such as
-global edge inclusion probability $\gamma$, the uncertainty
-quantification is handled by the function `summary_posterior_vec()`,
-which takes vector of posterior draws and returns both equal tailed
-credible intervals and highest posterior density (HPD) intervals at a
-user specified level. Below we do the uncertainty quantification for
-$\gamma$ at a 95% level.
+chain. In order to get the interval estimates of the parameters, we
+summarize it using the `posterior_interval_est`, which computes HPD and
+equal tailed credible intervals column wise, returning interval
+estimates for every underlying matrix element. To illustrate, we examine
+posterior uncertainty in the causal effect coefficients. The figure
+below displays the HPD and credible intervals for all nonzero entries of
+$B$, with the dashed red line indicating the true weight. The credible
+intervals tightly capture the ground truth values, and the HPD estimates
+lie close to the reference line, demonstrating that the method recovers
+both causal strength and graph structure accurately.
 
 ``` r
-gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
-gamma_posterior_summary$credible_interval
-#>       2.5%      97.5% 
-#> 0.05348228 0.18098877
-gamma_posterior_summary$hpd_interval[,1]
-#>      lower      upper 
-#> 0.04987347 0.17585404
-```
-
-Matrix valued parameters, such as the causal effect matrix $B$ or the
-mixture means and variances $(\mu_{ik},\tau_{ik})$, are stored as
-flattened matrices, where each column corresponds to a specific
-parameter entry and each row represents one MCMC iteration. These
-quantities are summarized using `summary_posterior_matrix()`, which
-computes HPD and equal tailed credible intervals column wise, returning
-interval estimates for every underlying matrix element.
-
-To illustrate, we examine posterior uncertainty in the causal effect
-coefficients. The figure below displays the HPD and credible intervals
-for all nonzero entries of $B$, with the dashed red line indicating the
-true weight. The credible intervals tightly capture the ground truth
-values, and the HPD estimates lie close to the reference line,
-demonstrating that the method recovers both causal strength and graph
-structure accurately.
-
-``` r
-Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list, level = 0.95)
+Causal_effect_matrix_summary = posterior_interval_est(Causal_effect_matrix_list, level = 0.95)
 hpd_matrix_acyclic = Causal_effect_matrix_summary$hpd_matrix
 ci_matrix_acyclic = Causal_effect_matrix_summary$ci_matrix
 
@@ -429,7 +414,7 @@ ggplot(data_1, aes(x = x, y = mid)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
 
 ``` r
 
@@ -449,7 +434,7 @@ ggplot(data_2, aes(x = x, y = X2)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-14-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-2.png" width="100%" />
 
 ## Cyclic (DCG) Example
 
@@ -534,19 +519,16 @@ plot(
 )
 ```
 
-<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
 
 With the simulated dataset and prior hyperparameters specified above, we
 now fit the Bayesian LiNGAM model using `BayesDCG()`. The function,
-similar to `BayesDAG()`, returns posterior samples for:
+similar to `BayesDAG()`, returns same posterior samples for
 
-- Adjacency matrices
-- Causal effect matrices
-- mixture model parameters
-- global parameters (e.g. $\gamma$, $\gamma_1$)
-
-These outputs allow users to perform full posterior uncertainty
-quantification.
+- Adjacency matrices,
+- Causal effect matrices,
+- Mixture parameters for the error model, with component specific means
+  and variances/precisions stored in matrices.
 
 ``` r
 #######################################
@@ -582,11 +564,11 @@ pi_matrix_list = results_list$pi_matrix_list
 ```
 
 To obtain a representative estimate of the graph structure, we again use
-the function `select_posterior_graph()`, which selects the posterior
-weighted medoid under a chosen distance metric. We use the same distance
-metrics, but the Structural Intervention Distance (SID) is only
-applicable when the sampled graphs are DAGs. Users may select shd or
-supply their own custom functions.
+the function `point_est_graph()`, which selects the posterior weighted
+medoid under a chosen distance metric. We use the same distance metrics,
+but the Structural Intervention Distance (SID) is only applicable when
+the sampled graphs are DAGs. Users may select shd or supply their own
+custom functions.
 
 ``` r
 # SID is shown for completeness, it applies only when all posterior graphs are DAGs. If any sampled graph contains a cycle, SID-based selection will produce an error.
@@ -641,7 +623,7 @@ Adjacency_matrix_true
 In addition to choosing the best possible graphs through distance based
 medoids, users similarly may evaluate how often a graph appears in
 structure appears in the posterior samples using
-`posterior_graph_mass()`. This provides posterior support for any
+`posterior_network_motif()`. This provides posterior support for any
 candidate DCG, such as the true graph.
 
 ``` r
@@ -663,40 +645,18 @@ assess mixing and posterior behavior:
 plot(log_likelihood_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'log likelihood values')
 ```
 
-<img src="man/figures/README-unnamed-chunk-23-1.png" width="100%" /> As
+<img src="man/figures/README-unnamed-chunk-22-1.png" width="100%" /> As
 seen overall, the log_likelihoods stay in the same general area
 indicating the sampler has reached a stationary regime, indicating
 posterior summaries for the other parameters are from a well converged
-chain.
-
-Similarly we can summarize low dimensional scalar parameters like
-$\gamma$ using `summary_posterior_vec()`, which returns both the 95%
-credible interval and the highest posterior density (HPD) interval:
-
-``` r
-# 95% credible interval + HPD interval
-gamma_posterior_summary = summary_posterior_vec(gamma_list, 0.95)
-
-# Print equal tailed credible interval
-gamma_posterior_summary$credible_interval
-#>      2.5%     97.5% 
-#> 0.1311195 0.6549850
-
-# Print HPD interval (first column corresponds to gamma)
-gamma_posterior_summary$hpd_interval[,1]
-#>     lower     upper 
-#> 0.1105984 0.5991075
-```
-
-For the matrix valued outputs, similar to the acyclic case, we can
-summarize uncertainty in the causal effect coefficients using
-`summary_posterior_matrix()`, which computes HPD and equal tailed
-credible intervals for each specific parameter entry represented as
-columns of the matrix outputs.
+chain. Similar to the acyclic case, we can summarize uncertainty in the
+causal effect coefficients using `posterior_interval_est()`, which
+computes HPD and equal tailed credible intervals for each specific
+parameter entry represented as columns of the matrix outputs.
 
 ``` r
 # Compute HPD and CI summaries for causal effect matrix
-Causal_effect_matrix_summary = summary_posterior_matrix(Causal_effect_matrix_list, level = 0.95)
+Causal_effect_matrix_summary = posterior_interval_est(Causal_effect_matrix_list, level = 0.95)
 hpd_matrix_cyclic = Causal_effect_matrix_summary$hpd_matrix
 ci_matrix_cyclic = Causal_effect_matrix_summary$ci_matrix
 
@@ -730,7 +690,7 @@ ggplot(data_cyclic, aes(x = x, y = mid)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-25-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-23-1.png" width="100%" />
 
 ``` r
 
@@ -750,4 +710,4 @@ ggplot(data_2, aes(x = x, y = X2)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-25-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-23-2.png" width="100%" />
