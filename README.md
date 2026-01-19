@@ -239,7 +239,7 @@ metrics are:
 
 - **Structural Intervention Distance (SID):**  
   Measures how many node pairs $(i, j)$ imply different intervention
-  distributions P($\mathbf{Y}_j$ \| $do(\mathbf{Y}_i)$).  
+  distributions P($\mathbf{Y}_j$ \| do($\mathbf{Y}_i$)).  
   (Applicable only when the posterior graphs are DAGs)
 
 Users may also specify
