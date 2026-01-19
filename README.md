@@ -239,7 +239,7 @@ metrics are:
 
 - **Structural Intervention Distance (SID):**  
   Measures how many node pairs $(i, j)$ imply different intervention
-  distributions $P(\vec{Y}_{j} \mid \mathrm{do}(\vec{Y}_{i}))$.  
+  distributions P($\mathbf{Y}_j$ \| $do(\mathbf{Y}_i)$).  
   (Applicable only when the posterior graphs are DAGs)
 
 Users may also specify
@@ -445,8 +445,8 @@ the spectral radius of the causal effect matrix $B$.
 
 Specifically, we compute ρ(B) = max{\|λ\| : λ ∈ eig(B)}, and if
 $\rho(B) \ge 0.95$, we rescale the matrix as
-$B \leftarrow \frac{0.95}{\rho(B)}$ , B, which guarantees that the
-spectral radius is strictly below $0.95$.
+$B \leftarrow \frac{0.95}{\rho(B)}B$, which guarantees that the spectral
+radius is strictly below 0.95.
 
 This rescaling step ensures numerical stability of the likelihood while
 preserving the relative structure of the causal effects encoded in $B$.
