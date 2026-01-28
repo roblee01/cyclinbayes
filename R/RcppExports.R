@@ -17,19 +17,3 @@ BCD_cpp <- function(data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_g
     .Call(`_cyclinbayes_BCD_cpp`, data_matrix, a_mu, b_mu, a_gamma, b_gamma, a_tao, b_tao, a_gamma_1, b_gamma_1, alpha, M, num_iter)
 }
 
-posterior_mean_adjacency <- function(Adjacency_matrix_samples, num_features) {
-    .Call(`_cyclinbayes_posterior_mean_adjacency`, Adjacency_matrix_samples, num_features)
-}
-
-posterior_mean_adjacency_threshold <- function(Adjacency_matrix_samples, num_features, threshold) {
-    .Call(`_cyclinbayes_posterior_mean_adjacency_threshold`, Adjacency_matrix_samples, num_features, threshold)
-}
-
-percentile_ci_causal_mat <- function(samples, lower, upper) {
-    .Call(`_cyclinbayes_percentile_ci_causal_mat`, samples, lower, upper)
-}
-
-hpd_ci_mat <- function(Causal_effect_matrix_list, cred_mass = 0.95) {
-    .Call(`_cyclinbayes_hpd_ci_mat`, Causal_effect_matrix_list, cred_mass)
-}
-

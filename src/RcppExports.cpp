@@ -81,66 +81,12 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// posterior_mean_adjacency
-arma::mat posterior_mean_adjacency(arma::mat Adjacency_matrix_samples, double num_features);
-RcppExport SEXP _cyclinbayes_posterior_mean_adjacency(SEXP Adjacency_matrix_samplesSEXP, SEXP num_featuresSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type Adjacency_matrix_samples(Adjacency_matrix_samplesSEXP);
-    Rcpp::traits::input_parameter< double >::type num_features(num_featuresSEXP);
-    rcpp_result_gen = Rcpp::wrap(posterior_mean_adjacency(Adjacency_matrix_samples, num_features));
-    return rcpp_result_gen;
-END_RCPP
-}
-// posterior_mean_adjacency_threshold
-arma::mat posterior_mean_adjacency_threshold(arma::mat Adjacency_matrix_samples, double num_features, double threshold);
-RcppExport SEXP _cyclinbayes_posterior_mean_adjacency_threshold(SEXP Adjacency_matrix_samplesSEXP, SEXP num_featuresSEXP, SEXP thresholdSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type Adjacency_matrix_samples(Adjacency_matrix_samplesSEXP);
-    Rcpp::traits::input_parameter< double >::type num_features(num_featuresSEXP);
-    Rcpp::traits::input_parameter< double >::type threshold(thresholdSEXP);
-    rcpp_result_gen = Rcpp::wrap(posterior_mean_adjacency_threshold(Adjacency_matrix_samples, num_features, threshold));
-    return rcpp_result_gen;
-END_RCPP
-}
-// percentile_ci_causal_mat
-arma::mat percentile_ci_causal_mat(const arma::mat& samples, double lower, double upper);
-RcppExport SEXP _cyclinbayes_percentile_ci_causal_mat(SEXP samplesSEXP, SEXP lowerSEXP, SEXP upperSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type samples(samplesSEXP);
-    Rcpp::traits::input_parameter< double >::type lower(lowerSEXP);
-    Rcpp::traits::input_parameter< double >::type upper(upperSEXP);
-    rcpp_result_gen = Rcpp::wrap(percentile_ci_causal_mat(samples, lower, upper));
-    return rcpp_result_gen;
-END_RCPP
-}
-// hpd_ci_mat
-List hpd_ci_mat(const arma::mat& Causal_effect_matrix_list, double cred_mass);
-RcppExport SEXP _cyclinbayes_hpd_ci_mat(SEXP Causal_effect_matrix_listSEXP, SEXP cred_massSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type Causal_effect_matrix_list(Causal_effect_matrix_listSEXP);
-    Rcpp::traits::input_parameter< double >::type cred_mass(cred_massSEXP);
-    rcpp_result_gen = Rcpp::wrap(hpd_ci_mat(Causal_effect_matrix_list, cred_mass));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_cyclinbayes_logSumExp", (DL_FUNC) &_cyclinbayes_logSumExp, 1},
     {"_cyclinbayes_log_dgamma", (DL_FUNC) &_cyclinbayes_log_dgamma, 3},
     {"_cyclinbayes_BayesSCLingam_cpp", (DL_FUNC) &_cyclinbayes_BayesSCLingam_cpp, 14},
     {"_cyclinbayes_BCD_cpp", (DL_FUNC) &_cyclinbayes_BCD_cpp, 12},
-    {"_cyclinbayes_posterior_mean_adjacency", (DL_FUNC) &_cyclinbayes_posterior_mean_adjacency, 2},
-    {"_cyclinbayes_posterior_mean_adjacency_threshold", (DL_FUNC) &_cyclinbayes_posterior_mean_adjacency_threshold, 3},
-    {"_cyclinbayes_percentile_ci_causal_mat", (DL_FUNC) &_cyclinbayes_percentile_ci_causal_mat, 3},
-    {"_cyclinbayes_hpd_ci_mat", (DL_FUNC) &_cyclinbayes_hpd_ci_mat, 2},
     {NULL, NULL, 0}
 };
 
