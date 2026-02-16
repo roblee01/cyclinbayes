@@ -170,7 +170,7 @@ plot(
 )
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />
 
 With the simulated dataset and prior hyperparameters specified above, we
 fit the Bayesian LiNGAM model using `BayesDAG()`. Each MCMC iteration t
@@ -364,7 +364,7 @@ stationarity. The trace plot for the log likelihood is plotted below:
 plot(log_likelihood_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'log likelihood values')
 ```
 
-<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-1.png" alt="" width="100%" />
 
 As seen overall, the log_likelihoods stay in the same general area
 indicating the sampler has reached a stationary regime, indicating
@@ -414,7 +414,7 @@ ggplot(data_1, aes(x = x, y = mid)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-1.png" alt="" width="100%" />
 
 ``` r
 
@@ -434,7 +434,7 @@ ggplot(data_2, aes(x = x, y = X2)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-2.png" alt="" width="100%" />
 
 ## Cyclic (DCG) Example
 
@@ -518,7 +518,7 @@ plot(
 )
 ```
 
-<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-15-1.png" alt="" width="100%" />
 
 With the simulated dataset and prior hyperparameters specified above, we
 now fit the Bayesian LiNGAM model using `BayesDCG()`. The function,
@@ -571,7 +571,8 @@ custom functions.
 ``` r
 # SID is shown for completeness, it applies only when all posterior graphs are DAGs. If any sampled graph contains a cycle, SID-based selection will produce an error.
 Adjacency_matrix_sid = point_est_graph(Adjacency_matrix_list, dist_type = 'sid')
-#> Error in point_est_graph(Adjacency_matrix_list, dist_type = "sid"): SID distance requires all graphs to be DAGs.
+#> Error in `point_est_graph()`:
+#> ! SID distance requires all graphs to be DAGs.
 ```
 
 ``` r
@@ -643,8 +644,8 @@ assess mixing and posterior behavior:
 plot(log_likelihood_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'log likelihood values')
 ```
 
-<img src="man/figures/README-unnamed-chunk-22-1.png" width="100%" /> As
-seen overall, the log_likelihoods stay in the same general area
+<img src="man/figures/README-unnamed-chunk-22-1.png" alt="" width="100%" />
+As seen overall, the log_likelihoods stay in the same general area
 indicating the sampler has reached a stationary regime, indicating
 posterior summaries for the other parameters are from a well converged
 chain. Similar to the acyclic case, we can summarize uncertainty in the
@@ -688,7 +689,7 @@ ggplot(data_cyclic, aes(x = x, y = mid)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-23-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-23-1.png" alt="" width="100%" />
 
 ``` r
 
@@ -708,7 +709,7 @@ ggplot(data_2, aes(x = x, y = X2)) +
   theme_minimal()
 ```
 
-<img src="man/figures/README-unnamed-chunk-23-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-23-2.png" alt="" width="100%" />
 
 ## Documentation (vignette + appendix)
 
@@ -716,5 +717,5 @@ See the package vignette for a full tutorial and an appendix with
 additional simulations and details:
 
 ``` r
-#vignette("cyclinbayes")
+#browseVignettes("cyclinbayes")
 ```
