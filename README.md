@@ -709,3 +709,12 @@ ggplot(data_2, aes(x = x, y = X2)) +
 ```
 
 <img src="man/figures/README-unnamed-chunk-23-2.png" width="100%" />
+
+## Documentation (vignette + appendix)
+
+See the package vignette for a full tutorial and an appendix with
+additional simulations and details:
+
+``` r
+#vignette("cyclinbayes")
+```
