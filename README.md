@@ -713,8 +713,9 @@ ggplot(data_2, aes(x = x, y = X2)) +
 
 ## Documentation (vignette + appendix)
 
-See the package vignette for a full tutorial and an appendix with
-additional simulations and details:
+For a complete tutorial **and the supplemental material** (appendix with
+additional simulations and implementation details), see the package
+vignette:
 
 ``` r
 #browseVignettes("cyclinbayes")
