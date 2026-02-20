@@ -9,9 +9,16 @@ Description: Tools for Bayesian MCMC estimation of the structure of cyclic and
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 3.6)
-Imports: 
-    Rcpp, gRbase, pcalg, igraph, ggplot2, methods, HDInterval, SID
-LinkingTo: Rcpp, RcppArmadillo
+Imports:
+    Rcpp,
+    RcppArmadillo,
+    igraph,
+    ggplot2,
+    HDInterval,
+    SID
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
 Suggests: testthat (>= 3.0.0), roxygen2
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
