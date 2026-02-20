@@ -53,19 +53,16 @@ library(igraph)
 #> The following object is masked from 'package:base':
 #> 
 #>     union
+
 # If using dist_type = "sid" and you see missing RBGL/graph:
 #install.packages("BiocManager")
-BiocManager::install(c("graph", "RBGL"))
-#> Bioconductor version 3.21 (BiocManager 1.30.27), R 4.5.1 (2025-06-13)
-#> Warning: package(s) not installed when version(s) same as or greater than current; use
-#>   `force = TRUE` to re-install: 'graph' 'RBGL'
-#> Old packages: 'readr', 'rJava'
+#BiocManager::install(c("graph", "RBGL"))
 ```
 
 ## Acyclic (DAG) Example
 
 Below is a simple example demonstrating how to use the Bayesian LiNGAM
-(DAG) sampler. Let $p$ denote the number of variables, $n$ the sample
+(DAG) sampler. Let $p$ denote the number of variables, $N$ the sample
 size, and $num\_iter$ be the number of iterations of the sampler. We
 generate error terms from a finite Gaussian mixture model:
 
@@ -95,7 +92,7 @@ $$
 where the $i$th row of $Y$ corresponds to
 
 $$
-(Y_i^{(1)}, \ldots, Y_i^{(n)})^\top.
+(Y_i^{(1)}, \ldots, Y_i^{(N)})^\top.
 $$
 
 ``` r
@@ -275,8 +272,12 @@ Adjacency_matrix_shd
 ############################################
 # Best Graph Structure determined through sid
 ############################################
-Adjacency_matrix_sid = point_est_graph(Adjacency_matrix_list,dist_type = 'sid')
-Adjacency_matrix_sid
+if (requireNamespace("SID", quietly = TRUE)) {
+  Adjacency_matrix_sid = point_est_graph(Adjacency_matrix_list, dist_type = "sid")
+  Adjacency_matrix_sid
+} else {
+  message("SID not installed. Install SID (and possibly Bioconductor graph/RBGL) to run SID.")
+}
 #>       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
 #>  [1,]    0    0    1    0    0    0    0    0    0     0
 #>  [2,]    0    0    0    0    0    0    0    0    0     1
