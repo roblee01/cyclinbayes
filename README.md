@@ -43,13 +43,6 @@ Then load the package:
 library(cyclinbayes)
 library(ggplot2)
 #> Warning: package 'ggplot2' was built under R version 4.5.2
-library(SID)
-library(pcalg)
-#> 
-#> Attaching package: 'pcalg'
-#> The following object is masked from 'package:SID':
-#> 
-#>     randomDAG
 library(igraph)
 #> Warning: package 'igraph' was built under R version 4.5.2
 #> 
@@ -60,6 +53,13 @@ library(igraph)
 #> The following object is masked from 'package:base':
 #> 
 #>     union
+# If using dist_type = "sid" and you see missing RBGL/graph:
+#install.packages("BiocManager")
+BiocManager::install(c("graph", "RBGL"))
+#> Bioconductor version 3.21 (BiocManager 1.30.27), R 4.5.1 (2025-06-13)
+#> Warning: package(s) not installed when version(s) same as or greater than current; use
+#>   `force = TRUE` to re-install: 'graph' 'RBGL'
+#> Old packages: 'readr', 'rJava'
 ```
 
 ## Acyclic (DAG) Example
@@ -109,7 +109,7 @@ set.seed(21)
 N = 300    # sample size
 num_covariates = 10     # number of features
 M = 2      # number of mixture components
-num_iter = 5000  # number of MCMC iterations
+num_iter = 1000  # number of MCMC iterations
 
 #######################################
 # Hyperparameter setup
@@ -155,7 +155,7 @@ variable to another.
 # Build directed graph from adjacency matrix
 #######################################
 
-g_true = graph_from_adjacency_matrix(
+g_true = igraph::graph_from_adjacency_matrix(
 Adjacency_matrix_true,
 mode = "directed",
 diag = FALSE
@@ -452,15 +452,13 @@ This rescaling step ensures numerical stability of the likelihood while
 preserving the relative structure of the causal effects encoded in $B$.
 
 ``` r
-library(cyclinbayes)
-
 #######################################
 # Simulation and MCMC settings
 #######################################
 N = 250 # Sample size for the test data
 num_covariates = 7 # Number of features for test data
 M = 2 # Number of finite clusters for mixed normal in likelihood
-num_iter = 5000 # Number of iterations MCMC runs
+num_iter = 2000 # Number of iterations MCMC runs
 
 #######################################
 # Hyperparameter setup
