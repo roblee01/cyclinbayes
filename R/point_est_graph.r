@@ -3,7 +3,7 @@
 #' @description
 #' Selects a representative graph structure from posterior samples by computing a **weighted medoid** under a chosen distance. Intended for lists of sampled adjacency matrices
 #'
-#' @param posterior_adjacency_matrices A matrix of dimension \code{num_iter × (p*p)} where each row is a flattened adjacency matrix sampled during the posterior (0/1 entries).
+#' @param Adjacency_matrix_list A matrix of dimension \code{num_iter × (p*p)} where each row is a flattened adjacency matrix sampled during the posterior (0/1 entries).
 #' @param dist_type Character string specifying the distance metric.
 #'   One of \code{"shd"}, \code{"sid"}, \code{"forb"}, or \code{"custom"}.
 #' @param dist_fun Optional user-supplied distance function used when

@@ -12,6 +12,8 @@ point_est_graph(
 )
 }
 \arguments{
+\item{Adjacency_matrix_list}{A matrix of dimension \code{num_iter × (p*p)} where each row is a flattened adjacency matrix sampled during the posterior (0/1 entries).}
+
 \item{dist_type}{Character string specifying the distance metric.
 One of \code{"shd"}, \code{"sid"}, \code{"forb"}, or \code{"custom"}.}
 
@@ -21,8 +23,6 @@ where \code{A} and \code{B} are \eqn{p \times p} adjacency matrices and
 return a non negative scalar distance.}
 
 \item{burn_in_frac}{Fraction of iterations to discard as burn in (default 0.75).}
-
-\item{posterior_adjacency_matrices}{A matrix of dimension \code{num_iter × (p*p)} where each row is a flattened adjacency matrix sampled during the posterior (0/1 entries).}
 }
 \value{
 The best possible graph structure found through finding the smallest distance through finding the weighted medoid based on chosen distance.
