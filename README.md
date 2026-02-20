@@ -89,7 +89,7 @@ $$
 Y = (I - B)^{-1}\epsilon,
 $$
 
-where the $i$th row of $Y$ corresponds to
+where the $i$h row of $Y$ corresponds to
 
 $$
 (Y_i^{(1)}, \ldots, Y_i^{(N)})^\top.

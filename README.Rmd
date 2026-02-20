@@ -61,16 +61,16 @@ M = 2, \quad
 (\pi_{i1}, \pi_{i2}) = (0.5, 0.5).
 \]
 
-We generate a sparse causal effect matrix $B$ by sampling edges independently with
-probability $\Delta = 0.9$ until the adjacency matrix is acyclic.
+We generate a sparse causal effect matrix \(B\) by sampling edges independently with
+probability \(\Delta = 0.9\) until the adjacency matrix is acyclic.
 
-Given \(B\) and the error matrix $\epsilon$, the data are generated via
+Given \(B\) and the error matrix \(\epsilon\), the data are generated via
 
 \[
 Y = (I - B)^{-1}\epsilon,
 \]
 
-where the $i$th row of $Y$ corresponds to
+where the \(i\)h row of \(Y\) corresponds to
 
 \[
 (Y_i^{(1)}, \ldots, Y_i^{(N)})^\top.
@@ -143,7 +143,7 @@ plot(
 )
 ```
 
-With the simulated dataset and prior hyperparameters specified above, we fit the Bayesian LiNGAM model using `BayesDAG()`. Each MCMC iteration t produces:
+With the simulated dataset and prior hyperparameters specified above, we fit the Bayesian LiNGAM model using `BayesDAG().` Each MCMC iteration t produces:
 
 - Adjacency matrix $E^{(t)}\in \{0,1\}^{p\times p}$
 - Causal effect matrix $B^{(t)}\in \mathbb{R}^{p\times p}$
