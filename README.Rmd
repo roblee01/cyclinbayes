@@ -38,9 +38,10 @@ Then load the package:
 library(cyclinbayes)
 library(ggplot2)
 library(igraph)
+
 # If using dist_type = "sid" and you see missing RBGL/graph:
 #install.packages("BiocManager")
-BiocManager::install(c("graph", "RBGL"))
+#BiocManager::install(c("graph", "RBGL"))
 ```
 
 ## Acyclic (DAG) Example
@@ -214,8 +215,12 @@ Adjacency_matrix_shd
 ############################################
 # Best Graph Structure determined through sid
 ############################################
-Adjacency_matrix_sid = point_est_graph(Adjacency_matrix_list,dist_type = 'sid')
-Adjacency_matrix_sid
+if (requireNamespace("SID", quietly = TRUE)) {
+  Adjacency_matrix_sid = point_est_graph(Adjacency_matrix_list, dist_type = "sid")
+  Adjacency_matrix_sid
+} else {
+  message("SID not installed. Install SID (and possibly Bioconductor graph/RBGL) to run SID.")
+}
 ```
 As an example for a custom function, we could count the total number of edge mismatches.
 

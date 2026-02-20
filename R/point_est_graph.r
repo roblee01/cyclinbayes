@@ -31,7 +31,7 @@
 #' N <- 300
 #' num_covariates <- 10
 #' M <- 2
-#' num_iter <- 5000
+#' num_iter <- 1000
 #'
 #' example_list <- generates_examples_DAG(num_covariates, N, M, 0.9, 21)
 #' data_matrix <- example_list$data_matrix
