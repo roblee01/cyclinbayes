@@ -170,8 +170,8 @@ plot(
 <img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />
 
 With the simulated dataset and prior hyperparameters specified above, we
-fit the Bayesian LiNGAM model using `BayesDAG()`. Each MCMC iteration t
-produces:
+fit the Bayesian LiNGAM model using `BayesDAG().` Each MCMC iteration
+$$t$$ produces:
 
 - Adjacency matrix $E^{(t)}\in \{0,1\}^{p\times p}$
 - Causal effect matrix $B^{(t)}\in \mathbb{R}^{p\times p}$
