@@ -439,15 +439,16 @@ ggplot(data_2, aes(x = x, y = X2)) +
 
 ## Cyclic (DCG) Example
 
-Finally, to illustrate the cyclic bayesian sampler, we first generate an
+Finally, to illustrate the cyclic Bayesian sampler, we first generate an
 adjacency matrix that contains at least one cycle. To ensure that the
 matrix $I - B$ is invertible and the system remains stable, we constrain
 the spectral radius of the causal effect matrix $B$.
 
-Specifically, we compute $ρ(B) = max\{|λ| : λ ∈ eig(B)\}$, and if
-$\rho(B) \ge 0.95$, we rescale the matrix as
-$B \leftarrow \frac{0.95}{\rho(B)}B$, which guarantees that the spectral
-radius is strictly below 0.95.
+Specifically, we compute $$
+\rho(B) \;=\; \max_{\lambda \in \mathrm{eig}(B)} |\lambda|,
+$$ and if $\rho(B) \ge 0.95$, we rescale the matrix as $$
+B \leftarrow \frac{0.95}{\rho(B)}\,B,
+$$ which guarantees that the spectral radius is strictly below $0.95$.
 
 This rescaling step ensures numerical stability of the likelihood while
 preserving the relative structure of the causal effects encoded in $B$.
