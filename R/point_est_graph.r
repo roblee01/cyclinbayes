@@ -120,15 +120,41 @@ point_est_graph = function(Adjacency_matrix_list, dist_type = 'shd', dist_fun = 
     }
 
   } else if(dist_type == 'sid'){
-    is_dag = vapply(unique_graphs, gRbase::is.DAG, logical(1L))
-    if (!all(is_dag)) {
-      stop("SID distance requires all graphs to be DAGs.")
+
+    is_dag_adj <- function(A) {
+      A <- (A != 0) * 1L
+      diag(A) <- 0L
+      p <- nrow(A)
+
+      indeg <- colSums(A)
+      queue <- which(indeg == 0L)
+      removed <- 0L
+
+      while (length(queue) > 0L) {
+        vtx <- queue[1L]
+        queue <- queue[-1L]
+        removed <- removed + 1L
+
+        out <- which(A[vtx, ] != 0L)
+        if (length(out)) {
+          indeg[out] <- indeg[out] - 1L
+          A[vtx, out] <- 0L
+          queue <- c(queue, out[indeg[out] == 0L])
+        }
+      }
+      removed == p
     }
 
+    is_dag <- vapply(unique_graphs, is_dag_adj, logical(1L))
+    if (!all(is_dag)) stop("SID distance requires all graphs to be DAGs.")
+
     for (i in seq_len(v - 1L)) {
-      Ai <- unique_graphs[[i]]
+      Ai <- (unique_graphs[[i]] != 0) * 1L
+      diag(Ai) <- 0L
       for (j in (i + 1L):v) {
-        d_ij <- SID::structIntervDist(Ai, unique_graphs[[j]])$sid
+        Aj <- (unique_graphs[[j]] != 0) * 1L
+        diag(Aj) <- 0L
+        d_ij <- SID::structIntervDist(Ai, Aj)$sid
         D[i, j] <- d_ij
         D[j, i] <- d_ij
       }
