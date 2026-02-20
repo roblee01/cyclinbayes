@@ -1,26 +1,41 @@
-#' Generate summary based on posterior sample provided
+#' Posterior summaries for MCMC samples
 #'
 #' @description
-#' Compute posterior summaries from a matrix of MCMC samples. When \code{adjacency = TRUE}, the function treats each row as a flattened
-#' adjacency matrix and returns edge wise posterior inclusion probabilities and posterior probabilities for unique graph structures. Otherwise,
-#' the function treats each column as a parameter and generates a credible and hpd interval based on the level input.
+#' Computes posterior summaries from a matrix of MCMC samples. When
+#' \code{adjacency = TRUE}, each row is treated as a vectorized (flattened)
+#' adjacency matrix and the function returns edge-wise posterior inclusion
+#' probabilities and posterior frequencies of unique graph structures (computed
+#' after discarding the first 75\% of iterations). When \code{adjacency = FALSE},
+#' each column is treated as a scalar parameter and the function returns equal-tailed
+#' credible intervals and HPD intervals at the specified credible level (also using
+#' the last 25\% of iterations).
 #'
-#' @param posterior_matrix numeric posterior sample matrix, where each row corresponds to the MCMC iteration
-#' @param level Credible level for the intervals, given as a probability between 0 and 1. Only utilized for posterior analysis of non graph structure samples.
+#' @param posterior_matrix Numeric matrix of posterior samples. Rows correspond to
+#'   MCMC iterations. If \code{adjacency = TRUE}, columns must represent a flattened
+#'   \eqn{p \times p} adjacency matrix.
+#' @param level Numeric in (0,1). Credible level for interval summaries (only used when
+#'   \code{adjacency = FALSE}).
+#' @param adjacency Logical. If \code{TRUE}, compute adjacency-specific summaries
+#'   (posterior inclusion probabilities and graph-structure frequencies). If \code{FALSE},
+#'   compute interval summaries for each column of \code{posterior_matrix}.
+#'
 #' @return
 #' If \code{adjacency = TRUE}, a list with components:
-#' \itemize{
-#'    \item \code{pip_matrix:} numeric matrix (P), with edge wise posterior inclusion probabilities, where entry P_{ij} is the proportion of sampled graphs contain an edge from i to j.
-#'    \item \code{pip_graph_results:} list in which each element corresponds to a unique graph structure and the proportion of times that structure appears in the posterior graph samples.
+#' \describe{
+#'   \item{pip_matrix}{Numeric \eqn{p \times p} matrix of edge-wise posterior inclusion
+#'   probabilities. Entry \eqn{(i,j)} is the proportion of retained draws containing an edge
+#'   from node \eqn{i} to node \eqn{j}.}
+#'   \item{pip_graph_results}{Named vector/table giving posterior frequencies of unique
+#'   graph structures among the retained draws.}
 #' }
-#'
 #'
 #' If \code{adjacency = FALSE}, a list with components:
-#' \itemize{
-#'   \item \code{ci_matrix:} numeric matrix, where each row is the equal-tailed credible interval for each parameter provide in the posterior matrix at the
-#'         specified level (e.g., 2.5\% and 97.5\% for \code{level = 0.95}).
-#'   \item \code{hpd_matrix:} numeric matrix, where each row is the HPD interval for each parameter at the same level.
+#' \describe{
+#'   \item{hpd_matrix}{Numeric matrix of HPD intervals for each parameter/column.}
+#'   \item{ci_matrix}{Numeric matrix of equal-tailed credible intervals (lower, median, upper)
+#'   for each parameter/column.}
 #' }
+#'
 #' @export
 #'
 #' @examples
