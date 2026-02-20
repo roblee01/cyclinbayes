@@ -444,7 +444,7 @@ adjacency matrix that contains at least one directed cycle. To ensure
 that `I - B` is invertible and the linear system is stable, we control
 the spectral radius of the causal effect matrix `B`.
 
-We compute the spectral radius as `ρ(B) = max_{λ ∈ eig(B)} |λ|}.` If
+We compute the spectral radius as `ρ(B) = max{λ ∈ eig(B)} |λ|}.` If
 `ρ(B) ≥ 0.95,` we rescale the matrix as `B = (0.95 / ρ(B)) * B,` which
 guarantees that the spectral radius is strictly below `0.95.`
 
