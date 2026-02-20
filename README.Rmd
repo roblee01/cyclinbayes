@@ -256,7 +256,7 @@ To assess whether the sampler has mixed well and is exploring the parameter spac
 plot(log_likelihood_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'log likelihood values')
 ```
 
-As seen overall, the log_likelihoods stay in the same general area indicating the sampler has reached a stationary regime, indicating posterior summaries for the other parameters are from a well converged chain. In order to get the interval estimates of the parameters, we summarize it using the `posterior_interval_est`, which computes HPD and equal tailed credible intervals column wise, returning interval estimates for every underlying matrix element. To illustrate, we examine posterior uncertainty in the causal effect coefficients. The figure below displays the HPD and credible intervals for all nonzero entries of $B$, with the dashed red line indicating the true weight. The credible intervals tightly capture the ground truth values, and the HPD estimates lie close to the reference line, demonstrating that the method recovers both causal strength and graph structure accurately.
+As seen overall, the log_likelihoods stay in the same general area indicating the sampler has reached a stationary regime, indicating posterior summaries for the other parameters are from a well converged chain. In order to get the interval estimates of the parameters, we summarize it using the `posterior_interval_est,` which computes HPD and equal tailed credible intervals column wise, returning interval estimates for every underlying matrix element. To illustrate, we examine posterior uncertainty in the causal effect coefficients. The figure below displays the HPD and credible intervals for all nonzero entries of $B$, with the dashed red line indicating the true weight. The credible intervals tightly capture the ground truth values, and the HPD estimates lie close to the reference line, demonstrating that the method recovers both causal strength and graph structure accurately.
 
 ```{r}
 Causal_effect_matrix_summary = posterior_interval_est(Causal_effect_matrix_list, level = 0.95)
@@ -312,7 +312,7 @@ ggplot(data_2, aes(x = x, y = X2)) +
 
 Finally, to illustrate the cyclic Bayesian sampler, we first generate an adjacency matrix that contains at least one directed cycle. To ensure that `I - B` is invertible and the linear system is stable, we control the spectral radius of the causal effect matrix `B`.
 
-We compute the spectral radius as `ρ(B) = max_{λ ∈ eig(B)} |λ|`. If `ρ(B) ≥ 0.95`, we rescale the matrix as `B <- (0.95 / ρ(B)) * B`, which guarantees that the spectral radius is strictly below `0.95`.
+We compute the spectral radius as `ρ(B) = max_{λ ∈ eig(B)} |λ|`. If `ρ(B) ≥ 0.95`, we rescale the matrix as `B = (0.95 / ρ(B)) * B`, which guarantees that the spectral radius is strictly below `0.95`.
 
 This rescaling step improves numerical stability of the likelihood while preserving the relative pattern of causal effects encoded in `B`.
 
@@ -379,7 +379,7 @@ plot(
 )
 ```
 
-With the simulated dataset and prior hyperparameters specified above, we now fit the Bayesian LiNGAM model using `BayesDCG()`. The function, similar to `BayesDAG()`, returns same posterior samples for 
+With the simulated dataset and prior hyperparameters specified above, we now fit the Bayesian LiNGAM model using `BayesDCG().` The function, similar to `BayesDAG(),` returns same posterior samples for 
 
 - Adjacency matrices,
 - Causal effect matrices, 
@@ -417,7 +417,7 @@ tao_matrix_list = results_list$tao_matrix_list
 pi_matrix_list = results_list$pi_matrix_list
 ```
 
-To obtain a representative estimate of the graph structure, we again use the function `point_est_graph()`, which selects the posterior weighted medoid under a chosen distance metric. We use the same distance metrics, but the Structural Intervention Distance (SID) is only applicable when the sampled graphs are DAGs. Users may select shd or supply their own custom functions. 
+To obtain a representative estimate of the graph structure, we again use the function `point_est_graph(),` which selects the posterior weighted medoid under a chosen distance metric. We use the same distance metrics, but the Structural Intervention Distance (SID) is only applicable when the sampled graphs are DAGs. Users may select shd or supply their own custom functions. 
 
 ```{r,warning=FALSE, message=FALSE, error = TRUE}
 # SID is shown for completeness, it applies only when all posterior graphs are DAGs. If any sampled graph contains a cycle, SID-based selection will produce an error.
@@ -442,7 +442,7 @@ In this example, the selected graphs coincide with the true adjacency matrix:
 Adjacency_matrix_true
 ```
 
-In addition to choosing the best possible graphs through distance based medoids, users similarly may evaluate how often a graph appears in structure appears in the posterior samples using `posterior_network_motif()`. This provides posterior support for any candidate DCG, such as the true graph. 
+In addition to choosing the best possible graphs through distance based medoids, users similarly may evaluate how often a graph appears in structure appears in the posterior samples using `posterior_network_motif().` This provides posterior support for any candidate DCG, such as the true graph. 
 
 ```{r}
 true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true)
@@ -456,7 +456,7 @@ Similar to the acyclic case, to check whether the sampler has mixed well and is 
 ```{r}
 plot(log_likelihood_list[,1][(0.75*num_iter):num_iter], type='l', xlab = 'Iterations', ylab = 'log likelihood values')
 ```
-As seen overall, the log_likelihoods stay in the same general area indicating the sampler has reached a stationary regime, indicating posterior summaries for the other parameters are from a well converged chain. Similar to the acyclic case, we can summarize uncertainty in the causal effect coefficients using `posterior_interval_est()`, which computes HPD and equal tailed credible intervals for each specific parameter entry represented as columns of the matrix outputs. 
+As seen overall, the log_likelihoods stay in the same general area indicating the sampler has reached a stationary regime, indicating posterior summaries for the other parameters are from a well converged chain. Similar to the acyclic case, we can summarize uncertainty in the causal effect coefficients using `posterior_interval_est(),` which computes HPD and equal tailed credible intervals for each specific parameter entry represented as columns of the matrix outputs. 
 
 ```{r}
 # Compute HPD and CI summaries for causal effect matrix

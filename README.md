@@ -371,7 +371,7 @@ As seen overall, the log_likelihoods stay in the same general area
 indicating the sampler has reached a stationary regime, indicating
 posterior summaries for the other parameters are from a well converged
 chain. In order to get the interval estimates of the parameters, we
-summarize it using the `posterior_interval_est`, which computes HPD and
+summarize it using the `posterior_interval_est,` which computes HPD and
 equal tailed credible intervals column wise, returning interval
 estimates for every underlying matrix element. To illustrate, we examine
 posterior uncertainty in the causal effect coefficients. The figure
@@ -445,7 +445,7 @@ that `I - B` is invertible and the linear system is stable, we control
 the spectral radius of the causal effect matrix `B`.
 
 We compute the spectral radius as `ρ(B) = max_{λ ∈ eig(B)} |λ|`. If
-`ρ(B) ≥ 0.95`, we rescale the matrix as `B <- (0.95 / ρ(B)) * B`, which
+`ρ(B) ≥ 0.95`, we rescale the matrix as `B = (0.95 / ρ(B)) * B`, which
 guarantees that the spectral radius is strictly below `0.95`.
 
 This rescaling step improves numerical stability of the likelihood while
@@ -519,8 +519,8 @@ plot(
 <img src="man/figures/README-unnamed-chunk-15-1.png" alt="" width="100%" />
 
 With the simulated dataset and prior hyperparameters specified above, we
-now fit the Bayesian LiNGAM model using `BayesDCG()`. The function,
-similar to `BayesDAG()`, returns same posterior samples for
+now fit the Bayesian LiNGAM model using `BayesDCG().` The function,
+similar to `BayesDAG(),` returns same posterior samples for
 
 - Adjacency matrices,
 - Causal effect matrices,
@@ -560,7 +560,7 @@ pi_matrix_list = results_list$pi_matrix_list
 ```
 
 To obtain a representative estimate of the graph structure, we again use
-the function `point_est_graph()`, which selects the posterior weighted
+the function `point_est_graph(),` which selects the posterior weighted
 medoid under a chosen distance metric. We use the same distance metrics,
 but the Structural Intervention Distance (SID) is only applicable when
 the sampled graphs are DAGs. Users may select shd or supply their own
@@ -620,7 +620,7 @@ Adjacency_matrix_true
 In addition to choosing the best possible graphs through distance based
 medoids, users similarly may evaluate how often a graph appears in
 structure appears in the posterior samples using
-`posterior_network_motif()`. This provides posterior support for any
+`posterior_network_motif().` This provides posterior support for any
 candidate DCG, such as the true graph.
 
 ``` r
@@ -647,7 +647,7 @@ As seen overall, the log_likelihoods stay in the same general area
 indicating the sampler has reached a stationary regime, indicating
 posterior summaries for the other parameters are from a well converged
 chain. Similar to the acyclic case, we can summarize uncertainty in the
-causal effect coefficients using `posterior_interval_est()`, which
+causal effect coefficients using `posterior_interval_est(),` which
 computes HPD and equal tailed credible intervals for each specific
 parameter entry represented as columns of the matrix outputs.
 
