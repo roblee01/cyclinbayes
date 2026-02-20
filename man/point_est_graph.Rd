@@ -31,64 +31,58 @@ The best possible graph structure found through finding the smallest distance th
 Selects a representative graph structure from posterior samples by computing a \strong{weighted medoid} under a chosen distance. Intended for lists of sampled adjacency matrices
 }
 \examples{
-# Run BayesDAG simulated example
+# This example runs the BayesDAG sampler and then selects a point-estimate graph.
+# NOTE: If you want to use dist_type = "sid", you may need extra dependencies.
+# In particular, on some systems the SID package requires Bioconductor RBGL/graph.
 
-N = 300
-num_covariates = 10
-M = 2
-num_iter = 5000
-
-
-example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
-
-data_matrix = example_list$data_matrix
-Adjacency_matrix_true = example_list$Adjacency_matrix_true
-
-params = list(
-a_mu = 0,
-b_mu = 2,
-a_gamma = 0.5,
-b_gamma = 0.5,
-a_gamma_1 = 2,
-b_gamma_1 = 1,
-a_tao = 2,
-b_tao = 1,
-a_og_tao = 0.01,
-b_og_tao = 0.01,
-alpha = 1
-)
-
-
-result_list = BayesDAG(
-data_matrix,
-params$a_mu,
-params$b_mu,
-params$a_gamma,
-params$b_gamma,
-params$a_tao,
-params$b_tao,
-params$a_og_tao,
-params$b_og_tao,
-params$a_gamma_1,
-params$b_gamma_1,
-params$alpha,
-M,
-num_iter
-) # Runs the Acyclic algorithm
-
-
-Adjacency_matrix_list = result_list$Adjacency_matrix_list
-
-Adjacency_matrix = point_est_graph(Adjacency_matrix_list,dist_type = 'shd') # Best graph structure using shd
-Adjacency_matrix
-
-Adjacency_matrix = point_est_graph(Adjacency_matrix_list,dist_type = 'sid') # Best graph structure using sid
-Adjacency_matrix
-
-custom_edge_mismatch = function(A, B) {
-return(sum(abs(A - B)))
+\donttest{
+# Install required packages if needed:
+# install.packages(c("remotes", "SID"))
+#
+# If SID complains about missing RBGL/graph, install via Bioconductor:
+# install.packages("BiocManager")
+# BiocManager::install(c("graph", "RBGL"))
 }
 
-Adjacency_matrix = point_est_graph(Adjacency_matrix_list, dist_type = 'custom', dist_fun = custom_edge_mismatch)
-Adjacency_matrix
+N <- 300
+num_covariates <- 10
+M <- 2
+num_iter <- 5000
+
+example_list <- generates_examples_DAG(num_covariates, N, M, 0.9, 21)
+data_matrix <- example_list$data_matrix
+
+params <- list(
+  a_mu = 0, b_mu = 2,
+  a_gamma = 0.5, b_gamma = 0.5,
+  a_gamma_1 = 2, b_gamma_1 = 1,
+  a_tao = 2, b_tao = 1,
+  a_og_tao = 0.01, b_og_tao = 0.01,
+  alpha = 1
+)
+
+result_list <- BayesDAG(
+  data_matrix,
+  params$a_mu, params$b_mu,
+  params$a_gamma, params$b_gamma,
+  params$a_tao, params$b_tao,
+  params$a_og_tao, params$b_og_tao,
+  params$a_gamma_1, params$b_gamma_1,
+  params$alpha,
+  M, num_iter
+)
+
+Adjacency_matrix_list <- result_list$Adjacency_matrix_list
+
+# Best graph structure using SHD
+point_est_graph(Adjacency_matrix_list, dist_type = "shd")
+
+# Best graph structure using SID (requires the SID package and possibly RBGL/graph)
+if (requireNamespace("SID", quietly = TRUE)) {
+  point_est_graph(Adjacency_matrix_list, dist_type = "sid")
+}
+
+# Best graph structure using a custom distance
+custom_edge_mismatch <- function(A, B) sum(abs(A - B))
+point_est_graph(Adjacency_matrix_list, dist_type = "custom", dist_fun = custom_edge_mismatch)
 }
