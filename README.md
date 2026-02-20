@@ -224,7 +224,7 @@ pi_matrix_list = results_lists$pi_matrix_list
 ```
 
 To obtain a representative estimate of the graph structure, we use the
-function `point_est_graph()`, which selects the posterior weighted
+function `point_est_graph(),` which selects the posterior weighted
 medoid, the graph that minimizes the weight distance to all other
 sampled adjacency matrices. Users may select one of the build in
 distances or supply their own custom functions. The available distance
@@ -444,8 +444,8 @@ adjacency matrix that contains at least one directed cycle. To ensure
 that `I - B` is invertible and the linear system is stable, we control
 the spectral radius of the causal effect matrix `B`.
 
-We compute the spectral radius as `ρ(B) = max_{λ ∈ eig(B)} |λ|`. If
-`ρ(B) ≥ 0.95`, we rescale the matrix as `B = (0.95 / ρ(B)) * B`, which
+We compute the spectral radius as `ρ(B) = max_{λ ∈ eig(B)} |λ|}.` If
+`ρ(B) ≥ 0.95,` we rescale the matrix as `B = (0.95 / ρ(B)) * B,` which
 guarantees that the spectral radius is strictly below `0.95`.
 
 This rescaling step improves numerical stability of the likelihood while
