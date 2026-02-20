@@ -2,24 +2,32 @@
 % Please edit documentation in R/generate_examples_DCG.r
 \name{generates_examples_DCG}
 \alias{generates_examples_DCG}
-\title{Generating DCG examples}
+\title{Generate synthetic DCG example data}
 \usage{
 generates_examples_DCG(num_covariates, N, M_input, prob_sparsity, seed_input)
 }
 \arguments{
-\item{num_covariates}{sample size}
+\item{num_covariates}{Integer. Number of variables (nodes) in the graph (p).}
 
-\item{N}{number of features}
+\item{N}{Integer. Sample size (number of observations).}
 
-\item{prob_sparsity}{Probability when we sample each non diagonal of the Adjacency matrix whether it is 0.}
+\item{M_input}{Integer. Number of mixture components in the noise model.}
 
-\item{number}{of clusters for the generated mixed normal}
+\item{prob_sparsity}{Numeric in (0,1). Sparsity control used when sampling edges.}
 
-\item{is_dag}{Whether our true graph is a Directed Acyclic graph or Directed Cyclic graph}
+\item{seed_input}{Integer. Random seed for reproducibility.}
 }
 \value{
-A list containing the data matrix and the true Adjacency matrix
+A list containing at least:
+\describe{
+\item{data_matrix}{An \eqn{N \times p} data matrix.}
+\item{Adjacency_matrix_true}{A \eqn{p \times p} adjacency matrix for the true DCG.}
+\item{Causal_effect_matrix_true}{A \eqn{p \times p} matrix of true causal effects.}
+}
 }
 \description{
-Generates examples to test the two methods provided
+Simulates data from a randomly generated sparse directed cyclic graph (DCG),
+where the coefficient matrix is rescaled to have spectral radius below 1 to
+ensure stability of \eqn{(I - B)^{-1}}. Noise is generated from a finite
+Gaussian mixture model. Intended for examples and simulation studies.
 }
