@@ -1,14 +1,21 @@
-#' Generating DAG examples
+#' Generate synthetic DAG example data
 #'
 #' @description
-#' Generates examples to test the two methods provided
+#' Simulates data from a randomly generated sparse directed acyclic graph (DAG),
+#' with non-Gaussian noise modeled as a finite Gaussian mixture. This function is
+#' intended for examples and simulation studies.
 #'
-#' @param num_covariates sample size
-#' @param N number of features
-#' @param number of clusters for the generated mixed normal
-#' @param prob_sparsity Probability when we sample each non diagonal of the Adjacency matrix whether it is 0.
-#' @param is_dag Whether our true graph is a Directed Acyclic graph or Directed Cyclic graph
-#' @return A list containing the data matrix and the true Adjacency matrix
+#' @param num_covariates Integer. Number of variables (nodes) in the graph (p).
+#' @param N Integer. Sample size (number of observations).
+#' @param M_input Integer. Number of mixture components in the noise model.
+#' @param prob_sparsity Numeric in (0,1). Sparsity control used when sampling edges.
+#' @param seed_input Integer. Random seed for reproducibility.
+#'
+#' @return A list containing at least:
+#' \describe{
+#'   \item{data_matrix}{An \eqn{N \times p} data matrix.}
+#'   \item{Adjacency_matrix_true}{A \eqn{p \times p} adjacency matrix for the true DAG.}
+#' }
 #'
 #' @export
 
