@@ -44,15 +44,15 @@ Selects a representative graph structure from posterior samples by computing a \
 # BiocManager::install(c("graph", "RBGL"))
 }
 
-N <- 300
-num_covariates <- 10
-M <- 2
-num_iter <- 5000
+N = 300
+num_covariates = 10
+M = 2
+num_iter = 1000
 
-example_list <- generates_examples_DAG(num_covariates, N, M, 0.9, 21)
-data_matrix <- example_list$data_matrix
+example_list = generates_examples_DAG(num_covariates, N, M, 0.9, 21)
+data_matrix = example_list$data_matrix
 
-params <- list(
+params = list(
   a_mu = 0, b_mu = 2,
   a_gamma = 0.5, b_gamma = 0.5,
   a_gamma_1 = 2, b_gamma_1 = 1,
@@ -61,7 +61,7 @@ params <- list(
   alpha = 1
 )
 
-result_list <- BayesDAG(
+result_list = BayesDAG(
   data_matrix,
   params$a_mu, params$b_mu,
   params$a_gamma, params$b_gamma,
@@ -83,6 +83,6 @@ if (requireNamespace("SID", quietly = TRUE)) {
 }
 
 # Best graph structure using a custom distance
-custom_edge_mismatch <- function(A, B) sum(abs(A - B))
+custom_edge_mismatch = function(A, B) sum(abs(A - B))
 point_est_graph(Adjacency_matrix_list, dist_type = "custom", dist_fun = custom_edge_mismatch)
 }
