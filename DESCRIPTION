@@ -10,7 +10,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 3.6)
 Imports: 
-    Rcpp, gRbase, pcalg, igraph, ggplot2
+    Rcpp, gRbase, pcalg, igraph, ggplot2, methods, graph, HDInterval
 LinkingTo: Rcpp, RcppArmadillo, ggplot2, SID
 Suggests: testthat (>= 3.0.0), roxygen2
 Config/testthat/edition: 3
