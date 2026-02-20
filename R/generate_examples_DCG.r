@@ -24,6 +24,31 @@
 
 
 generates_examples_DCG = function(num_covariates, N, M_input, prob_sparsity, seed_input){
+
+  is_dag_adj <- function(A) {
+    A <- (A != 0) * 1L
+    diag(A) <- 0L
+    p <- nrow(A)
+
+    indeg <- colSums(A)
+    queue <- which(indeg == 0L)
+    removed <- 0L
+
+    while (length(queue) > 0L) {
+      vtx <- queue[1L]
+      queue <- queue[-1L]
+      removed <- removed + 1L
+
+      out <- which(A[vtx, ] != 0L)
+      if (length(out)) {
+        indeg[out] <- indeg[out] - 1L
+        A[vtx, out] <- 0L
+        queue <- c(queue, out[indeg[out] == 0L])
+      }
+    }
+    removed == p
+  }
+
   set.seed(seed_input)
 
   Causal_effect_matrix_true=matrix(0,num_covariates,num_covariates)
@@ -62,7 +87,7 @@ generates_examples_DCG = function(num_covariates, N, M_input, prob_sparsity, see
       eigvalues_truth = eigen(Causal_effect_matrix_true_str)$values
       #end of i
       # if (det( identity_mat-Causal_effect_matrix_true) != 0) break
-      if (!(gRbase::is.DAG(Causal_effect_matrix_true_str)) && (det( identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
+      if (!(is_dag_adj(Causal_effect_matrix_true_str)) && (det( identity_mat-Causal_effect_matrix_true_str) != 0) &&  (mean(Causal_effect_matrix_true_str) != 0)){
         break
       }
     }#end of repeat
