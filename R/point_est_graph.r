@@ -107,17 +107,18 @@ point_est_graph = function(Adjacency_matrix_list, dist_type = 'shd', dist_fun = 
 
   D = matrix(0, nrow = v, ncol = v)
 
-  if(dist_type == 'shd'){
-    graph_list =  lapply(unique_graphs, function(A) as(A, "graphNEL"))
+  if (dist_type == "shd") {
 
     for (i in seq_len(v - 1L)) {
-      gi = graph_list[[i]]
+      Ai = unique_graphs[[i]]
       for (j in (i + 1L):v) {
-        d_ij = pcalg::shd(gi, graph_list[[j]])
+        Aj = unique_graphs[[j]]
+        d_ij = sum(Ai != Aj)   # structural Hamming distance on adjacency matrices
         D[i, j] = d_ij
         D[j, i] = d_ij
       }
     }
+
   } else if(dist_type == 'sid'){
     is_dag = vapply(unique_graphs, gRbase::is.DAG, logical(1L))
     if (!all(is_dag)) {
@@ -153,8 +154,5 @@ point_est_graph = function(Adjacency_matrix_list, dist_type = 'shd', dist_fun = 
   best_index = which.min(total_distance)
 
   best_adjacency_matrix = unique_graphs[[best_index]]
-  return(best_adjacency_matrix)
-
-
   return(best_adjacency_matrix)
 }
