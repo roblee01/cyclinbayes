@@ -11,14 +11,12 @@ Encoding: UTF-8
 Depends: R (>= 3.6)
 Imports:
     Rcpp,
-    RcppArmadillo,
     igraph,
-    ggplot2,
     HDInterval
 LinkingTo:
     Rcpp,
     RcppArmadillo
-Suggests: testthat (>= 3.0.0), roxygen2, SID
+Suggests: testthat (>= 3.0.0), roxygen2, SID, ggplot2
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 ByteCompile: true
