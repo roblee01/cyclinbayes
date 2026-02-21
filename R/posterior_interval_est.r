@@ -40,7 +40,7 @@
 #'
 #' @examples
 #'
-#' # Run BayessDAG simulated example
+#' # Run BayesDAG simulated example
 #'
 #' N = 300
 #' num_covariates = 10
