@@ -23,7 +23,7 @@ counts how often all edges appear in sampled posterior graph.
 }
 \examples{
 
-# Run BayessDAG simulated example
+# Run BayesDAG simulated example
 
 N = 300
 num_covariates = 10
