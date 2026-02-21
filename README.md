@@ -63,9 +63,10 @@ library(igraph)
 
 Below is a simple example demonstrating how to use the Bayesian LiNGAM
 (DAG) sampler. Let $p$ denote the number of variables, $N$ the sample
-size, and `num_iter` be the number of iterations of the sampler.Let
-$i \in \{1,\ldots,p\}$ index variables and $q \in \{1,\ldots,N\}$ index
-samples. We generate error terms from a finite Gaussian mixture model:
+size, and `num_iter` be the number of iterations of the sampler. Let
+$i \in \lbrace 1,\ldots,p \rbrace$ index variables and
+$q \in \lbrace 1,\ldots,N \rbrace$ index samples. We generate error
+terms from a finite Gaussian mixture model:
 
 $$
 \epsilon_i^{(q)} \sim \sum_{k=1}^{M} \pi_{ik}\, N(\mu_{ik}, \tau_{ik}),
