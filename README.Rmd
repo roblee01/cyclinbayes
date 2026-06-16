@@ -248,7 +248,7 @@ true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true
 posterior_network_motif(true_graph_structure, Adjacency_matrix_list)
 ```
 
-Since the value is at 1, this indicates that the sampler visited the true graph structure repeatedly on every possible posterior graph structure. 
+Since the value is at 0.931, this indicates that the sampler visited the true graph structure often. 
 
 To assess whether the sampler has mixed well and is exploring the parameter space adequately, we inspect the trace plot for the log likelihood. The log likelihood trace is especially useful, as it reflects convergence of the entire parameter configuration rather than a single component. Stable behavior in both the parameter traces and the log likelihood provides strong evidence that the chain has reached stationarity. The trace plot for the log likelihood is plotted below:
 
@@ -449,7 +449,7 @@ true_graph_structure = igraph::graph_from_adjacency_matrix(Adjacency_matrix_true
 posterior_network_motif(true_graph_structure, Adjacency_matrix_list)
 ```
 
-Since the value is at 1, this indicates that the sampler visited the true graph structure repeatedly on every possible posterior graph structure.
+Since the value is at 0.9985, this indicates that the sampler visited the true graph structure often in the posterior graph structures.
 
 Similar to the acyclic case, to check whether the sampler has mixed well and is exploring the parameter space well, we again inspect the log likelihood. Below we plot the log likelihood for each iteration to assess mixing and posterior behavior:
 

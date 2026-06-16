@@ -613,7 +613,7 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a
 
     // Epsilon update
 
-    arma::mat epsilon_mat = ((arma::eye(static_cast<arma::uword>(num_features), static_cast<arma::uword>(num_features)) - Causal_effect_matrix) * data_matrix.t()).t();
+    epsilon_mat = ((arma::eye(static_cast<arma::uword>(num_features), static_cast<arma::uword>(num_features)) - Causal_effect_matrix) * data_matrix.t()).t();
 
     //Rcout << "epsilon matrix finished" <<std::endl;
 
@@ -956,7 +956,7 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
 
     // Epsilon update
 
-    arma::mat epsilon_mat = ((arma::eye(static_cast<arma::uword>(num_features), static_cast<arma::uword>(num_features)) - Causal_effect_matrix) * data_matrix.t()).t();
+    epsilon_mat = ((arma::eye(static_cast<arma::uword>(num_features), static_cast<arma::uword>(num_features)) - Causal_effect_matrix) * data_matrix.t()).t();
     //mu mat
 
     for(int i2 = 0; i2 < num_features; i2++){
@@ -1023,7 +1023,7 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu, double a_gamma, do
 
     double b_1 = b_gamma_1 + accu(weighted_effects)/2;
 
-    double gamma_1 = rinvgamma_cpp(1,a_1,b_1)(0);
+    gamma_1 = rinvgamma_cpp(1,a_1,b_1)(0);
 
     gamma_1_list(i-1) = gamma_1;
 
