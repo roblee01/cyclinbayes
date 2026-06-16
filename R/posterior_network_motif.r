@@ -74,16 +74,11 @@
 #' posterior_network_motif(true_graph_structure, Adjacency_matrix_list)
 
 posterior_network_motif = function(graph_structure, posterior_graph_structures){
-  count = 0
   A = as.matrix(as_adjacency_matrix(graph_structure))
-  graph_structure_vec = c(A)
-  causal_effects_index = which(graph_structure_vec == 1)
-
-  for(i in 1:nrow(posterior_graph_structures)){
-    causal_effects_posterior_index = which(posterior_graph_structures[i,]==1)
-    all(causal_effects_index %in% causal_effects_posterior_index)
-    count = count + 1
-  }
-  return(count/nrow(posterior_graph_structures))
+  causal_effects_index = which(c(A) == 1)
+  hits = apply(posterior_graph_structures, 1, function(row){
+    all(causal_effects_index %in% which(row == 1))
+  })
+  return(sum(hits) / nrow(posterior_graph_structures))
 }
 
