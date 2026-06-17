@@ -768,6 +768,11 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
       Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
     log_current = arma::sum(log_current_vec);
 
+    // Record previous iteration likelihood from this fresh evaluation
+    // (reflects end-of-previous-iteration state: updated gamma_1, Z, mu, tao, pi)
+    // For iteration 1 this records the prior state which matches original behaviour
+    log_likelihood_list(i - 1) = log_current_vec(0);
+
     // 2. Structure + causal effect MH update (add/remove edge)
     double proposal_mean_add = 0;
     double burn_in           = 1000;
@@ -978,13 +983,17 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     }
     pi_matrix_list.row(i - 1) = arma::vectorise(pi_mat).t();
 
-    // 10. Log likelihood
-    // reuse log_current_vec which is already current — no extra call needed
-    arma::vec log_parts = Metropolis_hastings_portions_cpp(
-      data_matrix, Adjacency_matrix, Causal_effect_matrix,
-      Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
-    log_likelihood_list(i - 1) = log_parts[0];
+    // Step 10 removed — log likelihood now recorded at top of next
+    // iteration from the unavoidable gamma_result recompute,
+    // so no extra call needed here
   }
+
+  // Record final iteration likelihood — one call outside the loop
+  // to capture the end state of the last iteration
+  arma::vec final_log = Metropolis_hastings_portions_cpp(
+    data_matrix, Adjacency_matrix, Causal_effect_matrix,
+    Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
+  log_likelihood_list(num_iter - 1) = final_log(0);
 
   return List::create(
     Named("Adjacency_matrix_list")     = Adjacency_matrix_list,
