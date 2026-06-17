@@ -744,7 +744,29 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
   arma::mat practice_prob_mat(uN, uM);
   arma::uvec all_indices = arma::regspace<arma::uvec>(0, p - 1);
 
-  // --- Initialize log_current_vec before loop so it carries across iterations ---
+  // --- Precompute remaining_indices once before the loop ---
+  std::vector<arma::uvec> remaining_indices(p);
+  for(arma::uword k = 0; k < p; k++)
+    remaining_indices[k] = all_indices.elem(arma::find(all_indices != k));
+
+  // --- Stability check helper ---
+  // Returns true if the matrix is stable (max eigenvalue modulus < 1)
+  // Uses a cheap row-sum pre-filter before falling through to full eig_gen.
+  // The Gershgorin circle theorem guarantees that if the maximum absolute
+  // row sum is < 1 then all eigenvalues lie strictly inside the unit disk,
+  // so eig_gen can be skipped entirely in that case. Only when the row sum
+  // exceeds 1 do we need the full check.
+  auto is_stable = [](const arma::mat& C) -> bool {
+    // Gershgorin pre-filter: cheap O(p^2) check
+    arma::vec row_sums = arma::sum(arma::abs(C), 1);
+    if(row_sums.max() < 1.0) return true;
+    // Fall through to full O(p^3) eigenvalue decomposition
+    arma::cx_vec eigenvalues  = arma::eig_gen(C);
+    arma::vec mod_eigenvalues = arma::abs(eigenvalues);
+    return mod_eigenvalues.max() < 1.0;
+  };
+
+  // --- Initialize log_current_vec before loop ---
   arma::vec log_current_vec = Metropolis_hastings_portions_cpp(
     data_matrix, Adjacency_matrix, Causal_effect_matrix,
     Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
@@ -762,15 +784,13 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     gamma_result = rbeta_cpp(1, a, b)(0);
     gamma_list(i - 1) = gamma_result;
 
-    // gamma_result just changed so one recompute is unavoidable here
+    // gamma_result just changed so one recompute is unavoidable
     log_current_vec = Metropolis_hastings_portions_cpp(
       data_matrix, Adjacency_matrix, Causal_effect_matrix,
       Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
     log_current = arma::sum(log_current_vec);
 
-    // Record previous iteration likelihood from this fresh evaluation
-    // (reflects end-of-previous-iteration state: updated gamma_1, Z, mu, tao, pi)
-    // For iteration 1 this records the prior state which matches original behaviour
+    // Fix 1: record likelihood here reusing the unavoidable gamma recompute
     log_likelihood_list(i - 1) = log_current_vec(0);
 
     // 2. Structure + causal effect MH update (add/remove edge)
@@ -787,13 +807,9 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     double log_q_fwd = 0;
     double log_q_rev = 0;
 
-    // NOTE: original redeclares all_indices here, preserved as-is
-    arma::uvec all_indices = arma::regspace<arma::uvec>(0, p - 1);
-
     for(arma::uword i6 = 0; i6 < p; i6++){
-      arma::uvec remaining_index = all_indices.elem(
-        arma::find(all_indices != i6));
-      arma::uvec entries_order = arma::shuffle(remaining_index);
+      // Fix 2: use precomputed remaining_indices
+      arma::uvec entries_order = arma::shuffle(remaining_indices[i6]);
 
       for(arma::uword j6 = 0; j6 < entries_order.n_elem; j6++){
         log_q_fwd = 0;
@@ -820,10 +836,8 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
             b_old, proposal_mean_add, proposal_sd_add);
         }
 
-        arma::cx_vec eigenvalues  = arma::eig_gen(Causal_prop);
-        arma::vec mod_eigenvalues = arma::abs(eigenvalues);
-
-        if(arma::max(mod_eigenvalues) < 1){
+        // Fix 4: use Gershgorin pre-filter before full eig_gen
+        if(is_stable(Causal_prop)){
           arma::vec log_prop_vec = Metropolis_hastings_portions_cpp(
             data_matrix, Adjacency_prop, Causal_prop,
             Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
@@ -846,9 +860,6 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     }
 
     // 3. Causal effect weight MH update
-    // log_current_vec is already up to date from structure loop above
-    // so the redundant Metropolis_hastings_portions_cpp call is removed
-    // we only re-extract log_current using components (0) and (1) as original did
     double burn_in_sd     = 15000;
     arma::vec v           = {static_cast<double>(i), burn_in_sd};
     double weight_prop_sd = 0.03 + 0.07 * (arma::min(v) / burn_in_sd);
@@ -856,8 +867,8 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     log_current = log_current_vec(0) + log_current_vec(1);
 
     for(arma::uword i6 = 0; i6 < p; i6++){
-      arma::rowvec current_row = Adjacency_matrix.row(i6);
-      arma::uvec present_rows  = arma::find(current_row != 0);
+      // Fix 3: skip current_row copy
+      arma::uvec present_rows = arma::find(Adjacency_matrix.row(i6) != 0);
 
       if(present_rows.n_elem != 0){
         for(arma::uword j6 = 0; j6 < present_rows.n_elem; j6++){
@@ -866,10 +877,8 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
             Causal_effect_matrix(i6, present_rows(j6))
             + weight_prop_sd * arma::randn();
 
-          arma::cx_vec eigenvalues  = arma::eig_gen(Causal_prop);
-          arma::vec mod_eigenvalues = arma::abs(eigenvalues);
-
-          if(arma::max(mod_eigenvalues) < 1){
+          // Fix 4: use Gershgorin pre-filter before full eig_gen
+          if(is_stable(Causal_prop)){
             arma::vec log_prop_vec = Metropolis_hastings_portions_cpp(
               data_matrix, Adjacency_matrix, Causal_prop,
               Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
@@ -983,13 +992,10 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     }
     pi_matrix_list.row(i - 1) = arma::vectorise(pi_mat).t();
 
-    // Step 10 removed — log likelihood now recorded at top of next
-    // iteration from the unavoidable gamma_result recompute,
-    // so no extra call needed here
+    // Step 10 removed — likelihood recorded at top of next iteration
   }
 
-  // Record final iteration likelihood — one call outside the loop
-  // to capture the end state of the last iteration
+  // Record final iteration likelihood
   arma::vec final_log = Metropolis_hastings_portions_cpp(
     data_matrix, Adjacency_matrix, Causal_effect_matrix,
     Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
