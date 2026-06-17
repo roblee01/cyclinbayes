@@ -426,6 +426,14 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu,
   arma::mat practice_prob_mat(uN, uM);
   arma::uvec all_indices = arma::regspace<arma::uvec>(0, p - 1);
 
+  // --- Precompute exclude_j vectors once before the loop ---
+  std::vector<arma::uvec> remaining_index_by_node(p);
+  std::vector<arma::uvec> exclude_j_by_node(p);
+  for(arma::uword k = 0; k < p; k++){
+    remaining_index_by_node[k] = all_indices.elem(arma::find(all_indices != k));
+    exclude_j_by_node[k]       = all_indices.elem(arma::find(all_indices != k));
+  }
+
   // --- MH accept lambda ---
   auto mh_accept = [](double log_r) -> bool {
     if(log_r >= 0) return true;
@@ -446,8 +454,7 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu,
 
     // 2. Adjacency matrix + tao update
     for(int i1 = 0; i1 < p; i1++){
-      arma::uvec remaining_index = all_indices.elem(
-        arma::find(all_indices != (arma::uword)i1));
+      const arma::uvec& remaining_index = remaining_index_by_node[i1];
 
       arma::vec og_tao = rinvgamma_cpp(uM, a_og_tao, b_og_tao);
 
@@ -558,29 +565,31 @@ List BayesSCLingam_cpp(arma::mat data_matrix, double a_mu, double b_mu,
         i3 * uN, (i3 + 1) * uN - 1);
       category_mat.each_row() /= tao_mat.row(i3);
 
+      // Hoisted outside j3/z3 loops since it only depends on i3,
+      // not j3 or z3 — Causal_effect_matrix(i3,*) doesn't change
+      // within this i3 iteration until after all j3 are processed
+      arma::rowvec mu_row_i3 = mu_mat.row(i3);
+
       for(int j3 = 0; j3 < p; j3++){
         if(Adjacency_matrix(i3, j3) == 0){
           Causal_effect_matrix(i3, j3) = 0;
         } else {
+          const arma::uvec& exclude_j = exclude_j_by_node[j3];
+
+          // Fix 1: hoisted out of z3 loop — these only depend on i3 and j3,
+          // not z3, so they were being recomputed N times per edge for no reason
+          arma::rowvec ce_row = arma::rowvec(Causal_effect_matrix.row(i3));
+          arma::rowvec ce_portion =
+            arma::conv_to<arma::rowvec>::from(ce_row.elem(exclude_j));
+
           for(int z3 = 0; z3 < uN; z3++){
             arma::rowvec Y = data_matrix.row(z3);
 
-            // kept inside loop exactly as original
-            arma::uvec all_indices_local =
-              arma::regspace<arma::uvec>(0, p - 1);
-            arma::uvec exclude_j = all_indices_local.elem(
-              arma::find(all_indices_local != (arma::uword)j3));
-
-            arma::rowvec ce_row = arma::rowvec(
-              Causal_effect_matrix.row(i3));
-            arma::rowvec ce_portion =
-              arma::conv_to<arma::rowvec>::from(ce_row.elem(exclude_j));
             arma::rowvec y_sub =
               arma::conv_to<arma::rowvec>::from(Y.elem(exclude_j));
 
-            arma::rowvec mu_row    = mu_mat.row(i3);
             double dot_portion     = arma::dot(ce_portion, y_sub);
-            arma::rowvec adjusted_mu = Y(i3) - (mu_row + dot_portion);
+            arma::rowvec adjusted_mu = Y(i3) - (mu_row_i3 + dot_portion);
             arma::rowvec category_row = Y(j3) * category_mat.row(z3);
 
             numerator_portion_1(z3)   = arma::dot(category_row, adjusted_mu);
