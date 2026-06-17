@@ -744,6 +744,12 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
   arma::mat practice_prob_mat(uN, uM);
   arma::uvec all_indices = arma::regspace<arma::uvec>(0, p - 1);
 
+  // --- Initialize log_current_vec before loop so it carries across iterations ---
+  arma::vec log_current_vec = Metropolis_hastings_portions_cpp(
+    data_matrix, Adjacency_matrix, Causal_effect_matrix,
+    Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
+  double log_current = arma::sum(log_current_vec);
+
   // --- Main MCMC loop ---
   for(int i = 1; i <= num_iter; i++){
 
@@ -755,6 +761,12 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     // NOTE: original shadows outer gamma_result here, preserved as-is
     gamma_result = rbeta_cpp(1, a, b)(0);
     gamma_list(i - 1) = gamma_result;
+
+    // gamma_result just changed so one recompute is unavoidable here
+    log_current_vec = Metropolis_hastings_portions_cpp(
+      data_matrix, Adjacency_matrix, Causal_effect_matrix,
+      Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
+    log_current = arma::sum(log_current_vec);
 
     // 2. Structure + causal effect MH update (add/remove edge)
     double proposal_mean_add = 0;
@@ -770,11 +782,6 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     double log_q_fwd = 0;
     double log_q_rev = 0;
 
-    arma::vec log_current_vec = Metropolis_hastings_portions_cpp(
-      data_matrix, Adjacency_matrix, Causal_effect_matrix,
-      Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
-    double log_current = arma::sum(log_current_vec);
-
     // NOTE: original redeclares all_indices here, preserved as-is
     arma::uvec all_indices = arma::regspace<arma::uvec>(0, p - 1);
 
@@ -787,7 +794,7 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
         log_q_fwd = 0;
         log_q_rev = 0;
 
-        arma::mat Causal_prop   = Causal_effect_matrix;
+        arma::mat Causal_prop    = Causal_effect_matrix;
         arma::mat Adjacency_prop = Adjacency_matrix;
         double current_column    = entries_order[j6];
 
@@ -834,13 +841,13 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     }
 
     // 3. Causal effect weight MH update
-    double burn_in_sd    = 15000;
-    arma::vec v          = {static_cast<double>(i), burn_in_sd};
+    // log_current_vec is already up to date from structure loop above
+    // so the redundant Metropolis_hastings_portions_cpp call is removed
+    // we only re-extract log_current using components (0) and (1) as original did
+    double burn_in_sd     = 15000;
+    arma::vec v           = {static_cast<double>(i), burn_in_sd};
     double weight_prop_sd = 0.03 + 0.07 * (arma::min(v) / burn_in_sd);
 
-    log_current_vec = Metropolis_hastings_portions_cpp(
-      data_matrix, Adjacency_matrix, Causal_effect_matrix,
-      Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
     log_current = log_current_vec(0) + log_current_vec(1);
 
     for(arma::uword i6 = 0; i6 < p; i6++){
@@ -972,6 +979,7 @@ List BCD_cpp(arma::mat data_matrix, double a_mu, double b_mu,
     pi_matrix_list.row(i - 1) = arma::vectorise(pi_mat).t();
 
     // 10. Log likelihood
+    // reuse log_current_vec which is already current — no extra call needed
     arma::vec log_parts = Metropolis_hastings_portions_cpp(
       data_matrix, Adjacency_matrix, Causal_effect_matrix,
       Z_matrix, mu_mat, tao_mat, N, M, gamma_1, gamma_result);
