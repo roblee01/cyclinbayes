@@ -1,0 +1,369 @@
+#' Posterior Interval Estimate for MCMC samples
+#'
+#' @description
+#' Computes posterior summaries from a matrix of MCMC samples. When
+#' \code{adjacency = TRUE}, each row is treated as a vectorized (flattened)
+#' adjacency matrix and the function returns edge-wise posterior inclusion
+#' probabilities and posterior frequencies of unique graph structures (computed
+#' after discarding the first 75 percent of iterations). When \code{adjacency = FALSE},
+#' each column is treated as a scalar parameter and the function returns equal-tailed
+#' credible intervals and HPD intervals at the specified credible level (also using
+#' the last 25 percent of iterations).
+#'
+#' @param posterior_matrix Numeric matrix of posterior samples. Rows correspond to
+#'   MCMC iterations. If \code{adjacency = TRUE}, columns must represent a flattened
+#'   \eqn{p \times p} adjacency matrix.
+#' @param level Numeric in (0,1). Credible level for interval summaries (only used when
+#'   \code{adjacency = FALSE}).
+#' @param adjacency Logical. If \code{TRUE}, compute adjacency specific summaries
+#'   (posterior inclusion probabilities and graph structure frequencies). If \code{FALSE},
+#'   compute interval summaries for each column of \code{posterior_matrix}.
+#'
+#' @return
+#' If \code{adjacency = TRUE}, a list with components:
+#' \describe{
+#'   \item{pip_matrix}{Numeric \eqn{p \times p} matrix of edge-wise posterior inclusion
+#'   probabilities. Entry \eqn{(i,j)} is the proportion of retained draws containing an edge
+#'   from node \eqn{i} to node \eqn{j}.}
+#'   \item{pip_graph_results}{Named vector/table giving posterior frequencies of unique
+#'   graph structures among the retained draws.}
+#' }
+#'
+#' If \code{adjacency = FALSE}, a list with components:
+#' \describe{
+#'   \item{hpd_matrix}{Numeric matrix of HPD intervals for each parameter/column.}
+#'   \item{ci_matrix}{Numeric matrix of equal-tailed credible intervals (lower, median, upper)
+#'   for each parameter/column.}
+#' }
+#'
+#' @export
+#'
+#' @examples
+#'
+#' #######################################
+#' # Run BayesDAG simulated example
+#' #######################################
+#'
+#' N = 300
+#' num_covariates = 10
+#' M = 2
+#' num_iter = 1000
+#'
+#'
+#' #######################################
+#' # Generate DAG example
+#' #######################################
+#'
+#' example_list = generates_examples_DAG(
+#'   num_covariates, N, M, 0.9, 21
+#' )
+#'
+#' data_matrix = example_list$data_matrix
+#' Adjacency_matrix_true = example_list$Adjacency_matrix_true
+#' Causal_effect_matrix_true = example_list$Causal_effect_matrix_true
+#'
+#'
+#' #######################################
+#' # Hyperparameter setup
+#' #######################################
+#'
+#' params = list(
+#'   a_mu = 0,
+#'   b_mu = 2,
+#'   a_gamma = 0.5,
+#'   b_gamma = 0.5,
+#'   a_gamma_1 = 2,
+#'   b_gamma_1 = 1,
+#'   a_tao = 2,
+#'   b_tao = 1,
+#'   a_og_tao = 0.01,
+#'   b_og_tao = 0.01,
+#'   alpha = 1
+#' )
+#'
+#'
+#' #######################################
+#' # Run Bayesian DAG sampler
+#' #######################################
+#'
+#' result_list = BayesDAG(
+#'   data_matrix,
+#'   params$a_mu,
+#'   params$b_mu,
+#'   params$a_gamma,
+#'   params$b_gamma,
+#'   params$a_tao,
+#'   params$b_tao,
+#'   params$a_og_tao,
+#'   params$b_og_tao,
+#'   params$a_gamma_1,
+#'   params$b_gamma_1,
+#'   params$alpha,
+#'   M,
+#'   num_iter
+#' )
+#'
+#'
+#' #######################################
+#' # Extract posterior outputs
+#' #######################################
+#'
+#' Adjacency_matrix_list =
+#'   result_list$Adjacency_matrix_list
+#'
+#' Causal_effect_matrix_list =
+#'   result_list$Causal_effect_matrix_list
+#'
+#' gamma_list = result_list$gamma_list
+#' gamma_1_list = result_list$gamma_1_list
+#' mu_matrix_list = result_list$mu_matrix_list
+#' tao_matrix_list = result_list$tao_matrix_list
+#' pi_matrix_list = result_list$pi_matrix_list
+#'
+#'
+#' #######################################
+#' # Posterior interval estimation
+#' #######################################
+#'
+#' Causal_effect_matrix_summary =
+#'   posterior_interval_est(
+#'     Causal_effect_matrix_list,
+#'     level = 0.95
+#'   )
+#'
+#' hpd_matrix_acyclic =
+#'   Causal_effect_matrix_summary$hpd_matrix
+#'
+#' ci_matrix_acyclic =
+#'   Causal_effect_matrix_summary$ci_matrix
+#'
+#'
+#' #######################################
+#' # Identify true nonzero causal effects
+#' #######################################
+#'
+#' # R vectorizes matrices column by column
+#' true_vec = as.vector(Causal_effect_matrix_true)
+#'
+#' # Indices of truly nonzero coefficients
+#' true_idx = which(true_vec != 0)
+#'
+#' # Convert vector indices to matrix coordinates
+#' coords = arrayInd(
+#'   true_idx,
+#'   .dim = dim(Causal_effect_matrix_true)
+#' )
+#'
+#' # B_ij represents the causal effect j -> i
+#' true_effects_df = data.frame(
+#'   coef_index = true_idx,
+#'   child = coords[, 1],
+#'   parent = coords[, 2],
+#'   truth = true_vec[true_idx]
+#' )
+#'
+#' true_effects_df$edge = paste0(
+#'   true_effects_df$parent,
+#'   " -> ",
+#'   true_effects_df$child
+#' )
+#'
+#'
+#' #######################################
+#' # Check posterior interval dimensions
+#' #######################################
+#'
+#' if (ncol(hpd_matrix_acyclic) != length(true_vec)) {
+#'   stop("HPD dimensions do not match true effects.")
+#' }
+#'
+#' if (nrow(ci_matrix_acyclic) != length(true_vec)) {
+#'   stop("CI dimensions do not match true effects.")
+#' }
+#'
+#'
+#' #######################################
+#' # HPD intervals for true causal effects
+#' #######################################
+#'
+#' # Extract intervals for truly nonzero effects
+#' hpd_sub = t(
+#'   hpd_matrix_acyclic[
+#'     , true_idx, drop = FALSE
+#'   ]
+#' )
+#'
+#' colnames(hpd_sub) = c("lower", "upper")
+#'
+#' data_hpd = data.frame(
+#'   edge = true_effects_df$edge,
+#'   truth = true_effects_df$truth,
+#'   lower = hpd_sub[, "lower"],
+#'   upper = hpd_sub[, "upper"]
+#' )
+#'
+#' # Posterior estimate: midpoint of HPD interval
+#' data_hpd$estimate = (
+#'   data_hpd$lower + data_hpd$upper
+#' ) / 2
+#'
+#' # Preserve the order of causal edges
+#' data_hpd$edge = factor(
+#'   data_hpd$edge,
+#'   levels = unique(data_hpd$edge)
+#' )
+#'
+#'
+#' #######################################
+#' # Plot 95% HPD intervals
+#' #######################################
+#'
+#' ggplot2::ggplot(
+#'   data_hpd,
+#'   ggplot2::aes(x = edge, y = estimate)
+#' ) +
+#'   ggplot2::geom_errorbar(
+#'     ggplot2::aes(
+#'       ymin = lower,
+#'       ymax = upper
+#'     ),
+#'     width = 0.2
+#'   ) +
+#'   ggplot2::geom_point(size = 3) +
+#'   ggplot2::geom_point(
+#'     ggplot2::aes(y = truth),
+#'     shape = 4,
+#'     size = 4,
+#'     stroke = 1.3,
+#'     color = "red"
+#'   ) +
+#'   ggplot2::labs(
+#'     x = "True Causal Edge",
+#'     y = "Causal Effect",
+#'     title = "Posterior Estimates with 95% HPD Intervals"
+#'   ) +
+#'   ggplot2::theme_minimal() +
+#'   ggplot2::theme(
+#'     axis.text.x = ggplot2::element_text(
+#'       angle = 45,
+#'       hjust = 1
+#'     )
+#'   )
+#'
+#'
+#' #######################################
+#' # Equal-tailed credible intervals
+#' #######################################
+#'
+#' # Columns contain lower, median, upper
+#' ci_sub = ci_matrix_acyclic[
+#'   true_idx, , drop = FALSE
+#' ]
+#'
+#' data_ci = data.frame(
+#'   edge = true_effects_df$edge,
+#'   truth = true_effects_df$truth,
+#'   lower = ci_sub[, 1],
+#'   estimate = ci_sub[, 2],
+#'   upper = ci_sub[, 3]
+#' )
+#'
+#' # Preserve the order of causal edges
+#' data_ci$edge = factor(
+#'   data_ci$edge,
+#'   levels = unique(data_ci$edge)
+#' )
+#'
+#'
+#' #######################################
+#' # Plot 95% equal-tailed credible intervals
+#' #######################################
+#'
+#' ggplot2::ggplot(
+#'   data_ci,
+#'   ggplot2::aes(x = edge, y = estimate)
+#' ) +
+#'   ggplot2::geom_errorbar(
+#'     ggplot2::aes(
+#'       ymin = lower,
+#'       ymax = upper
+#'     ),
+#'     width = 0.2
+#'   ) +
+#'   ggplot2::geom_point(size = 3) +
+#'   ggplot2::geom_point(
+#'     ggplot2::aes(y = truth),
+#'     shape = 4,
+#'     size = 4,
+#'     stroke = 1.3,
+#'     color = "red"
+#'   ) +
+#'   ggplot2::labs(
+#'     x = "True Causal Edge",
+#'     y = "Causal Effect",
+#'     title = "Posterior Estimates with 95% Credible Intervals"
+#'   ) +
+#'   ggplot2::theme_minimal() +
+#'   ggplot2::theme(
+#'     axis.text.x = ggplot2::element_text(
+#'       angle = 45,
+#'       hjust = 1
+#'     )
+#'   )
+#'
+#'
+#' #######################################
+#' # Posterior interval coverage
+#' #######################################
+#'
+#' data_hpd$covered = (
+#'   data_hpd$truth >= data_hpd$lower &
+#'   data_hpd$truth <= data_hpd$upper
+#' )
+#'
+#' data_ci$covered = (
+#'   data_ci$truth >= data_ci$lower &
+#'   data_ci$truth <= data_ci$upper
+#' )
+#'
+#' # Proportion of true effects covered
+#' mean(data_hpd$covered)
+#' mean(data_ci$covered)
+
+posterior_interval_est = function(posterior_matrix, level, adjacency = FALSE){
+
+  num_iter = nrow(posterior_matrix)
+
+  if(adjacency){
+    num_iter = nrow(posterior_matrix)
+    num_features = sqrt(ncol(posterior_matrix))
+    Adjacency_matrix_list_75 = posterior_matrix[(0.75*num_iter):num_iter,]
+    pip_matrix = matrix(colMeans(Adjacency_matrix_list_75), num_features, num_features)
+
+
+    denominator_val = nrow(Adjacency_matrix_list_75)
+    probabilities_vec = rep(0,denominator_val)
+    for(i in 1:denominator_val){
+      probabilities_vec[i] = paste(Adjacency_matrix_list_75[i,],collapse='')
+    }
+    pip_graph_results = sort(table(probabilities_vec),decreasing=TRUE)/denominator_val
+
+    return(list(pip_matrix = pip_matrix, pip_graph_results = pip_graph_results))
+  }
+
+  ci_matrix = matrix(0,ncol(posterior_matrix),3)
+
+  if(ncol(posterior_matrix) == 1){
+    posterior_75 = as.matrix(posterior_matrix[(0.75*num_iter):num_iter,])
+  } else{
+    posterior_75 = posterior_matrix[(0.75*num_iter):num_iter,]
+  }
+
+  hpd_matrix = HDInterval::hdi(posterior_75, credMass = level)
+
+  for(i in 1:ncol(posterior_matrix)){
+    ci_matrix[i,] =  quantile(posterior_75[,i],c((1-level)/2,0.5,1-(1-level)/2))
+  }
+
+  return(list(hpd_matrix = hpd_matrix, ci_matrix = ci_matrix))
+}
